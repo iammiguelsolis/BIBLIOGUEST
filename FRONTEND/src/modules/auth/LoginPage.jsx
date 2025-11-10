@@ -11,7 +11,7 @@ import LoginForm from "./components/LoginForm";
             />
 
             
-            <div className="absolute inset-0 bg-red-900/70 backdrop-blur-sm"></div>
+            <div className="absolute inset-0 bg-blue-900/10 backdrop-blur-sm"></div>
 
         
             <div className="relative z-10">
