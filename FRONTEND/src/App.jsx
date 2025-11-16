@@ -6,6 +6,7 @@ import LaptopReservationPage from "./modules/reservation/LaptopReservationPage";
 
 import "./styles.css";
 import { MainLayout } from "./globals/layaout/MainLayout";
+import LibrosPage from "./modules/libros/page/Libros";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route element={<MainLayout />}>
           <Route path="/laptop" element={<LaptopReservationPage />} />
+          <Route path="/libro" element={<LibrosPage />} />
         </Route>
       </Routes>
     </Router>
