@@ -4,6 +4,8 @@
     function SearchBar({
     placeholder = "Buscar un libro, autor o tema...",
     buttonLabel = "Buscar",
+    value,
+    onChange,
     onSearch, 
     }) {
     const handleSubmit = (e) => {
@@ -18,9 +20,13 @@
         >
         <Input
             placeholder={placeholder}
-            onChange={(e) => console.log("Texto:", e.target.value)}
+            value = {value}
+            onChange={onChange} 
+            className="h-14 w-30 text-base"
         />
-        <Button variant="primary" onClick={handleSubmit}>
+        <Button variant="primary" onClick={handleSubmit}
+            className="h-14  whitespace-nowrap"
+        >
             {buttonLabel}
         </Button>
         </form>
