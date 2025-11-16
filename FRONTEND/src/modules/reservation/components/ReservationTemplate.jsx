@@ -19,18 +19,6 @@
     }) {
     return (
         <div className="min-h-screen flex flex-col bg-background">
-        {/* Navbar */}
-        <Navbar />
-
-        {/* Header */}
-        <header className="w-full  py-3 px-6 shadow-lg ">
-        <div className="max-w-7xl mx-auto text-center">
-            <h1 className="text-2xl md:text-4xl font-extrabold text-black mb-2">
-            Computadoras
-            </h1>
-            <p className="text-black text-lg">Biblioguest</p>
-        </div>
-        </header>
 
         {/* Main Content */}
         <main className="flex-1 px-6 py-8 space-y-8 bg-red-50">
@@ -56,9 +44,6 @@
             selectedDuration={selectedDuration}
             />
         </main>
-
-        {/* Footer */}
-        <Footer />
         </div>
     );
     }
