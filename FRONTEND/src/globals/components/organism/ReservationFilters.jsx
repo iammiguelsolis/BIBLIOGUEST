@@ -5,7 +5,6 @@
     onFiltersChange,
     startTimeOptions,
     durationOptions,
-    peopleOptions,
     osOptions,          
     brandOptions
     }) {
@@ -21,10 +20,6 @@
 
     const handleDurationChange = (e) => {
         onFiltersChange({ ...filters, duration: e.target.value });
-    };
-
-    const handlePeopleCountChange = (e) => {
-        onFiltersChange({ ...filters, peopleCount: e.target.value });
     };
 
     
@@ -46,15 +41,12 @@
             onStartTimeChange={handleStartTimeChange}
             duration={filters.duration}
             onDurationChange={handleDurationChange}
-            peopleCount={filters.peopleCount}
-            onPeopleCountChange={handlePeopleCountChange}
             os={filters.os}                      
             onOsChange={handleOsChange}         
             brand={filters.brand}                
             onBrandChange={handleBrandChange}
             startTimeOptions={startTimeOptions}
             durationOptions={durationOptions}
-            peopleOptions={peopleOptions}
             osOptions={osOptions}                
             brandOptions={brandOptions} 
         />

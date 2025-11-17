@@ -430,3 +430,67 @@ BEGIN
   END IF;
 END;
 /
+
+CREATE OR REPLACE PROCEDURE PRC_HORARIOS_DISP_LAPTOP (
+  p_fecha_reserva   IN DATE,
+  p_hora_inicio     IN NUMBER      DEFAULT NULL,
+  p_duracion_horas  IN NUMBER      DEFAULT NULL,
+  p_sistema_oper    IN VARCHAR2    DEFAULT NULL,
+  p_marca           IN VARCHAR2    DEFAULT NULL,
+  p_result          OUT SYS_REFCURSOR
+) AS
+  v_duracion        NUMBER := NVL(p_duracion_horas, 1); -- por defecto 1 hora
+  v_inicio_jornada  CONSTANT PLS_INTEGER := 8;  -- 08:00
+  v_fin_jornada     CONSTANT PLS_INTEGER := 20; -- 20:00 (sin incluir)
+BEGIN
+  /*
+    Generamos slots de v_duracion horas entre v_inicio_jornada y v_fin_jornada.
+    Luego filtramos laptops y excluimos los slots que se solapan con reservas activas.
+  */
+
+  OPEN p_result FOR
+    WITH horas AS (
+      SELECT
+        (TRUNC(p_fecha_reserva) + (v_inicio_jornada + (LEVEL - 1)) / 24) AS inicio_slot,
+        (v_inicio_jornada + (LEVEL - 1)) AS hora_slot
+      FROM dual
+      CONNECT BY (v_inicio_jornada + (LEVEL - 1)) + v_duracion <= v_fin_jornada
+    ),
+    laptops_filtradas AS (
+      SELECT l.*
+      FROM   LAPTOP l
+      WHERE  l.ESTADO = 'disponible'
+      AND    (p_sistema_oper IS NULL OR l.SISTEMA_OPERATIVO = p_sistema_oper)
+      AND    (p_marca        IS NULL OR l.MARCA             = p_marca)
+    ),
+    reservas_dia AS (
+      SELECT
+        r.ID_LAPTOP,
+        -- armamos fecha+hora de inicio y fin de la reserva
+        r.FECHA_RESERVA
+          + (r.HORA_INICIO - TRUNC(r.HORA_INICIO)) AS fecha_hora_inicio,
+        r.FECHA_RESERVA
+          + (r.HORA_FIN    - TRUNC(r.HORA_FIN   )) AS fecha_hora_fin
+      FROM RESERVALAPTOP r
+      WHERE TRUNC(r.FECHA_RESERVA) = TRUNC(p_fecha_reserva)
+        AND r.ESTADO = 'activa'
+    )
+    SELECT
+      l.ID_LAPTOP         AS "idLaptop",
+      l.MARCA             AS "marca",
+      l.SISTEMA_OPERATIVO AS "sistemaOperativo",
+      h.inicio_slot       AS "fechaHoraInicio",
+      h.inicio_slot + (v_duracion / 24) AS "fechaHoraFin"
+    FROM   laptops_filtradas l
+    CROSS JOIN horas h
+    WHERE  (p_hora_inicio IS NULL OR h.hora_slot = p_hora_inicio)
+    AND    NOT EXISTS (
+             SELECT 1
+             FROM   reservas_dia r
+             WHERE  r.ID_LAPTOP = l.ID_LAPTOP
+             AND    h.inicio_slot <  r.fecha_hora_fin
+             AND    h.inicio_slot + (v_duracion / 24) > r.fecha_hora_inicio
+           )
+    ORDER BY "idLaptop", "fechaHoraInicio";
+END PRC_HORARIOS_DISP_LAPTOP;
+/

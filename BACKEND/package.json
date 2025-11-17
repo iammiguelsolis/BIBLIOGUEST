@@ -3,8 +3,11 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "oracledb": "^6.10.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

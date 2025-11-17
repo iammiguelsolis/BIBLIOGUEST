@@ -8,7 +8,7 @@
     onSearch,
     selectedStartTime,
     selectedDuration,
-    searchPlaceholder = "Nombre de la PC..."
+    searchPlaceholder = "Nombre de la Laptop..."
     }) {
 
         const [searchValue, setSearchValue] = useState("");
@@ -48,7 +48,6 @@
                 <LaptopCard
                 key={laptop.id}
                 name={laptop.name}
-                availableSeats={laptop.availableSeats}
                 os={laptop.os}                   
                 brand={laptop.brand}  
                 timeSlots={laptop.timeSlots}

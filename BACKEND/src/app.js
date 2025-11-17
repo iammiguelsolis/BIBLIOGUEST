@@ -1,23 +1,30 @@
 const express = require('express');
 const morgan = require('morgan');
-//const config = require("./config/config");
-//const error = require("./middleware/errors");
-//const cors = require('cors');
+const config = require("./config/config");
+const error = require("./middleware/errors");
+const cors = require('cors');
+
+const libro = require('./routes/libro');
+const laptop = require('./routes/laptop');
 
 const app = express();
 
 // middlewares
-//app.use(error);
-//app.use(cors()); 
+app.use(cors());
+app.use(morgan('dev'));
 
 // config
-//app.set("port", config.app.port);
-app.set("port", 3000);
+app.set("port", config.app.port);
+//app.set("port", 3000);
 
 app.use(express.json());
 
 //rutas
-//ej: app.use("/", home);
+app.use("/", libro);
+app.use("/", laptop);
+
+// error middleware (debe ir al final)
+app.use(error);
 
 //--------- ACCESO PARA index.js ----------
 module.exports = app;

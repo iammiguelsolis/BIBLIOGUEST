@@ -9,15 +9,13 @@
     onStartTimeChange,
     duration,
     onDurationChange,
-    peopleCount,
-    onPeopleCountChange,
     os,                  
     onOsChange,          
     brand,               
     onBrandChange,
     startTimeOptions = [],
     durationOptions = [],
-    peopleOptions = [],
+    
     osOptions = [],      
     brandOptions = []
     }) {
@@ -48,16 +46,6 @@
             durationOptions={durationOptions}
         />
 
-        {/* Selector de nmero de personas */}
-        <div>
-            <Select
-            label="¿Cuántas personas?"
-            value={peopleCount}
-            onChange={onPeopleCountChange}
-            options={peopleOptions}
-            placeholder="¿Cuántas personas?"
-            />
-        </div>
 
         {/* selector del SO */}
         <div>
