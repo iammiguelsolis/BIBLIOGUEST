@@ -144,3 +144,179 @@
 > id debe ser un numero entero
 
 ---
+
+## LIBRO
+
+---
+### GET /libro?isbn&titulo&subtitulo&editorial&anio
+#### Campos:
+- **isbn** (Ej: "978-1234567890")
+- **titulo** (Ej: "Introducción a la Programación")
+- **subtitulo** (Ej: "Enfocado en Java")
+- **editorial** (Ej: "Pearson", "McGraw-Hill")
+- **anio** (Ej: 2020, 2018)
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de libros que coincidan con los filtros enviados.
+
+---
+### GET /libro/:id
+
+> Para obtener un libro por su ID
+
+> id debe ser un número entero
+
+Devuelve los datos básicos del libro (sin autores, categorías ni etiquetas).
+
+---
+### GET /libro/:id/detalle
+
+> Para obtener un libro con su información relacionada
+
+> id debe ser un número entero
+
+Devuelve:
+- Datos del libro (idLibro, isbn, titulo, subtitulo, editorial, nroEdicion, anio)
+- Lista de **autores** asociados
+- Lista de **categorías** asociadas
+- Lista de **etiquetas** asociadas
+
+---
+### POST /libro
+
+> Para registrar un nuevo libro en el sistema.
+
+#### BODY:
+
+```json
+{
+  "isbn": "978-1234567890",        // STRING (opcional, UNIQUE)
+  "titulo": "Introducción a X",    // STRING (obligatorio)
+  "subtitulo": "Conceptos básicos",// STRING (opcional)
+  "editorial": "Editorial X",      // STRING (opcional)
+  "nroEdicion": 2,                 // NUMBER (opcional)
+  "anio": 2024                     // NUMBER (opcional)
+}
+```
+
+- El campo **titulo** es obligatorio.
+- Si **isbn** ya existe, la BD devolverá error por la restricción UNIQUE.
+- Si no se envían `nroEdicion` o `anio`, se guardarán como NULL.
+
+---
+### PUT /libro/:id
+
+> Para actualizar los datos de un libro.
+
+> id debe ser un número entero
+
+#### BODY (ejemplo):
+
+```json
+{
+  "isbn": "978-9876543210",        
+  "titulo": "Título actualizado",
+  "subtitulo": "Subtítulo actualizado",
+  "editorial": "Otra Editorial",
+  "nroEdicion": 3,
+  "anio": 2025
+}
+```
+
+- Ningún campo del body es obligatorio; solo se actualizarán los campos que se envíen.
+- Si no se encuentra un libro con ese **id**, se responderá con **404**.
+- Si se cambia **isbn** a un valor que ya existe en otro libro, la BD dará error por la restricción UNIQUE.
+
+---
+### DELETE /libro/:id
+
+> Para eliminar físicamente un libro
+
+> id debe ser un número entero
+
+- Si no existe un libro con ese **id**, se responderá con **404**.
+- Si el libro tiene **ejemplares asociados**, la BD no permitirá su eliminación por la restricción de clave foránea.
+
+---
+### POST /libro/:id/autores
+
+> Para asignar o reemplazar la lista de autores asociados a un libro.
+
+> id debe ser un número entero
+
+#### BODY:
+
+```json
+{
+  "autores": [1, 2, 3]   // ARRAY de IDs de autores (NUMBER)
+}
+```
+
+- El campo **autores** debe ser un array.
+- Se eliminarán las relaciones anteriores (LibroAutor) y se registrarán las nuevas.
+- Si algún idAutor no existe, la BD devolverá error por la FK.
+
+---
+### DELETE /libro/:id/autores/:idAutor
+
+> Para eliminar la asociación entre un libro y un autor específico.
+
+> id e idAutor deben ser números enteros
+
+- Si no existe la relación libro-autor, se responderá con **404**.
+
+---
+### POST /libro/:id/categorias
+
+> Para asignar o reemplazar la lista de categorías asociadas a un libro.
+
+> id debe ser un número entero
+
+#### BODY:
+
+```json
+{
+  "categorias": [1, 4, 7]   // ARRAY de IDs de categorías (NUMBER)
+}
+```
+
+- El campo **categorias** debe ser un array.
+- Se eliminarán las relaciones anteriores (CategoriasLibro) y se registrarán las nuevas.
+- Si algún idCategoria no existe, la BD devolverá error por la FK.
+
+---
+### DELETE /libro/:id/categorias/:idCategoria
+
+> Para eliminar la asociación entre un libro y una categoría específica.
+
+> id e idCategoria deben ser números enteros
+
+- Si no existe la relación libro-categoría, se responderá con **404**.
+
+---
+### POST /libro/:id/etiquetas
+
+> Para asignar o reemplazar la lista de etiquetas asociadas a un libro.
+
+> id debe ser un número entero
+
+#### BODY:
+
+```json
+{
+  "etiquetas": [2, 5, 9]   // ARRAY de IDs de etiquetas (NUMBER)
+}
+```
+
+- El campo **etiquetas** debe ser un array.
+- Se eliminarán las relaciones anteriores (LibroEtiquetas) y se registrarán las nuevas.
+- Si algún idEtiqueta no existe, la BD devolverá error por la FK.
+
+---
+### DELETE /libro/:id/etiquetas/:idEtiqueta
+
+> Para eliminar la asociación entre un libro y una etiqueta específica.
+
+> id e idEtiqueta deben ser números enteros
+
+- Si no existe la relación libro-etiqueta, se responderá con **404**.
