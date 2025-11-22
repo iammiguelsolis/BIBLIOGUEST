@@ -58,12 +58,14 @@ BEGIN
     FROM ReservaLaptop r
    WHERE r.id_laptop = p_id_laptop
      AND r.fecha_reserva = p_fecha
-     AND r.estado = 'activa'
+     AND UPPER(r.estado) = 'ACTIVA'
      AND fn_build_ts(r.fecha_reserva, r.hora_inicio) < fn_build_ts(p_fecha, p_fin)
      AND fn_build_ts(r.fecha_reserva, r.hora_fin)    > fn_build_ts(p_fecha, p_ini)
-     AND NVL(r.id_reserva, -1) <> NVL(p_ignorar_id, -1);
+     AND (
+          p_ignorar_id IS NULL
+          OR r.id_reserva != p_ignorar_id
+         );
 
-  ROLLBACK;
   RETURN CASE WHEN v_cnt > 0 THEN 1 ELSE 0 END;
 END;
 /
@@ -466,11 +468,9 @@ BEGIN
     reservas_dia AS (
       SELECT
         r.ID_LAPTOP,
-        -- armamos fecha+hora de inicio y fin de la reserva
-        r.FECHA_RESERVA
-          + (r.HORA_INICIO - TRUNC(r.HORA_INICIO)) AS fecha_hora_inicio,
-        r.FECHA_RESERVA
-          + (r.HORA_FIN    - TRUNC(r.HORA_FIN   )) AS fecha_hora_fin
+        -- armamos fecha+hora de inicio y fin de la reserva usando fn_build_ts
+        fn_build_ts(r.FECHA_RESERVA, r.HORA_INICIO) AS fecha_hora_inicio,
+        fn_build_ts(r.FECHA_RESERVA, r.HORA_FIN)    AS fecha_hora_fin
       FROM RESERVALAPTOP r
       WHERE TRUNC(r.FECHA_RESERVA) = TRUNC(p_fecha_reserva)
         AND r.ESTADO = 'activa'
@@ -478,6 +478,7 @@ BEGIN
     SELECT
       l.ID_LAPTOP         AS "idLaptop",
       l.MARCA             AS "marca",
+      l.MODELO            AS "modelo",
       l.SISTEMA_OPERATIVO AS "sistemaOperativo",
       h.inicio_slot       AS "fechaHoraInicio",
       h.inicio_slot + (v_duracion / 24) AS "fechaHoraFin"

@@ -1,78 +1,295 @@
 const db = require('../config/db');
 const oracledb = require('oracledb');
 
-exports.getHorariosLaptopsDisponibles = async (data) => {
-  const connection =  await db.getConnection();
+exports.countLaptops = async (data) => {
+  const { idBiblioteca, sistemaOperativo, marca, modelo, estado } = data;
+
+  let query = `
+    SELECT COUNT(*) AS total
+    FROM LAPTOP
+    WHERE 1 = 1
+  `;
+
+  const binds = {};
+
+  if (idBiblioteca) {
+    query += ` AND ID_BIBLIOTECA = :idBiblioteca`;
+    binds.idBiblioteca = Number(idBiblioteca);
+  }
+  
+  if (sistemaOperativo) {
+    query += ` AND UPPER(SISTEMA_OPERATIVO) LIKE UPPER(:sistemaOperativo)`;
+    binds.sistemaOperativo = `%${sistemaOperativo}%`;
+  }
+
+  if (marca) {
+    query += ` AND UPPER(MARCA) LIKE UPPER(:marca)`;
+    binds.marca = `%${marca}%`;
+  }
+
+  if (modelo) {
+    query += ` AND UPPER(MODELO) LIKE UPPER(:modelo)`;
+    binds.modelo = `%${modelo}%`;
+  }
+
+  if (estado) {
+    query += ` AND UPPER(ESTADO) = UPPER(:estado)`;
+    binds.estado = estado;
+  }
+
+  const result = await db.query(query, binds);
+  return result[0].rows[0].TOTAL || 0;
+}
+
+exports.getLaptops = async (pagination = {}, data) => {
+  const { page, limit } = pagination;
+  const { idBiblioteca, sistemaOperativo, marca, modelo, estado } = data;
+
+  let query = `
+    SELECT
+      ID_LAPTOP,
+      ID_BIBLIOTECA,
+      NUMERO_SERIE,
+      SISTEMA_OPERATIVO,
+      MARCA,
+      MODELO,
+      ESTADO
+    FROM LAPTOP
+    WHERE 1 = 1
+  `;
+
+  const binds = {};
+
+  if (idBiblioteca) {
+    query += ` AND ID_BIBLIOTECA = :idBiblioteca`;
+    binds.idBiblioteca = Number(idBiblioteca);
+  }
+  
+  if (sistemaOperativo) {
+    query += ` AND UPPER(SISTEMA_OPERATIVO) LIKE UPPER(:sistemaOperativo)`;
+    binds.sistemaOperativo = `%${sistemaOperativo}%`;
+  }
+
+  if (marca) {
+    query += ` AND UPPER(MARCA) LIKE UPPER(:marca)`;
+    binds.marca = `%${marca}%`;
+  }
+
+  if (modelo) {
+    query += ` AND UPPER(MODELO) LIKE UPPER(:modelo)`;
+    binds.modelo = `%${modelo}%`;
+  }
+
+  if (estado) {
+    query += ` AND UPPER(ESTADO) = UPPER(:estado)`;
+    binds.estado = estado;
+  }
+
+  query += ` 
+    ORDER BY ID_LAPTOP OFFSET 
+    :offset ROWS FETCH NEXT :limit ROWS ONLY
+  `;
+
+  const offset = (page - 1) * limit;
+  const queryParams = { ...binds, limit, offset };
+
+  const result = await db.query(query, queryParams);
+  return result[0].rows;
+}
+
+exports.getLaptopById = async (idLaptop) => {
+  const query = `
+    SELECT
+      ID_LAPTOP,
+      ID_BIBLIOTECA,
+      NUMERO_SERIE,
+      SISTEMA_OPERATIVO,
+      MARCA,
+      MODELO,
+      ESTADO
+    FROM LAPTOP
+    WHERE ID_LAPTOP = :idLaptop
+  `;
+
+  const result = await db.query(query, { idLaptop: Number(idLaptop) });
+  return result[0].rows[0];
+}
+
+exports.createLaptop = async (data) => {
+  let connection;
   try {
-    // Convertir horaInicio de formato "HH:MM" a NUMBER (ej: "08:30" => 8.5)
-    console.log('data.horaInicioNum:', data.horaInicioNum);
+    connection = await db.getConnection();
 
-    let horaInicioNum = null;
-    if (data.horaInicioNum) {
-      const partes = data.horaInicioNum.toString().split(':');
-      if (partes.length === 2) {
-        horaInicioNum = parseInt(partes[0]) + (parseInt(partes[1]) / 60);
-      } else {
-        horaInicioNum = parseFloat(data.horaInicioNum);
-      }
-    }
-
-    console.log('horaInicioNum:', horaInicioNum);
-    
+    const {
+      idBiblioteca,
+      numeroSerie,
+      sistemaOperativo,
+      marca,
+      modelo,
+      idUtilidad,
+      estado
+    } = data;
 
     const result = await connection.execute(
       `
-      BEGIN
-        PRC_HORARIOS_DISP_LAPTOP(
-          :p_fecha_reserva,
-          :p_hora_inicio,
-          :p_duracion_horas,
-          :p_sistema_oper,
-          :p_marca,
-          :p_result
-        );
-      END;
+      INSERT INTO LAPTOP (
+        ID_BIBLIOTECA,
+        NUMERO_SERIE,
+        SISTEMA_OPERATIVO,
+        MARCA,
+        MODELO,
+        ID_UTILIDAD,
+        ESTADO
+      ) VALUES (
+        :idBiblioteca,
+        :numeroSerie,
+        :sistemaOperativo,
+        :marca,
+        :modelo,
+        :idUtilidad,
+        :estado
+      )
+      RETURNING ID_LAPTOP INTO :idLaptop
       `,
       {
-        p_fecha_reserva: { val: data.fecha ? new Date(data.fecha) : new Date(), type: oracledb.DATE },
-        p_hora_inicio:   { val: horaInicioNum, type: oracledb.NUMBER },
-        p_duracion_horas:{ val: data.duracionHoras ? parseFloat(data.duracionHoras) : null, type: oracledb.NUMBER },
-        p_sistema_oper:  { val: data.sistemaOperativo || null, type: oracledb.STRING },
-        p_marca:         { val: data.marca || null, type: oracledb.STRING },
-        p_result:        { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
+        idBiblioteca: idBiblioteca ? Number(idBiblioteca) : null,
+        numeroSerie,
+        sistemaOperativo,
+        marca,
+        modelo,
+        idUtilidad: idUtilidad ? Number(idUtilidad) : null,
+        estado: estado || 'disponible',
+        idLaptop: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
       }
     );
 
-    const resultSet = result.outBinds.p_result;
-    const rows = await resultSet.getRows(); // Obtener todas las filas
-    await resultSet.close(); // Cerrar el cursor
-    await connection.close(); // Cerrar la conexión
+    await connection.commit();
 
-    const map = new Map();
+    const idLaptopCreada = result.outBinds.idLaptop[0];
+    return idLaptopCreada;
+  } catch (error) {
+    if (connection) {
+      try { await connection.rollback(); } catch {}
+    }
+    throw error;
+  } finally {
+    if (connection) {
+      try { await connection.close(); } catch {}
+    }
+  }
+}
 
-    for (const row of rows) {
-      let laptop = map.get(row.idLaptop);
-      if (!laptop) {
-        laptop = {
-          idLaptop: row.idLaptop,
-          sistemaOperativo: row.sistemaOperativo,
-          marca: row.marca,
-          horarios: [],
-        };
-        map.set(row.idLaptop, laptop);
-      }
 
-      laptop.horarios.push({
-        inicio: row.fechaHoraInicio,
-        fin: row.fechaHoraFin,
-      });
+exports.updateLaptop = async (idLaptop, data) => {
+  let connection;
+  try {
+    connection = await db.getConnection();
+
+    const id = Number(idLaptop);
+    if (!Number.isInteger(id)) {
+      throw new Error('idLaptop inválido');
     }
 
-    return Array.from(map.values());
-  } catch (err) {
-    try{
-      await connection.close();
-    } catch {}
-    throw err;
+    const sets = [];
+    const binds = { idLaptop: id };
+
+    if (data.idBiblioteca !== undefined) {
+      sets.push('ID_BIBLIOTECA = :idBiblioteca');
+      binds.idBiblioteca = data.idBiblioteca ? Number(data.idBiblioteca) : null;
+    }
+
+    if (data.numeroSerie !== undefined) {
+      sets.push('NUMERO_SERIE = :numeroSerie');
+      binds.numeroSerie = data.numeroSerie || null;
+    }
+
+    if (data.sistemaOperativo !== undefined) {
+      sets.push('SISTEMA_OPERATIVO = :sistemaOperativo');
+      binds.sistemaOperativo = data.sistemaOperativo || null;
+    }
+
+    if (data.marca !== undefined) {
+      sets.push('MARCA = :marca');
+      binds.marca = data.marca || null;
+    }
+
+    if (data.modelo !== undefined) {
+      sets.push('MODELO = :modelo');
+      binds.modelo = data.modelo || null;
+    }
+
+    if (data.idUtilidad !== undefined) {
+      sets.push('ID_UTILIDAD = :idUtilidad');
+      binds.idUtilidad = data.idUtilidad ? Number(data.idUtilidad) : null;
+    }
+
+    if (data.estado !== undefined) {
+      sets.push('ESTADO = :estado');
+      binds.estado = data.estado || null;
+    }
+
+    if (sets.length === 0) {
+      // Nada que actualizar
+      return 0;
+    }
+
+    const query = `
+      UPDATE LAPTOP
+         SET ${sets.join(', ')}
+       WHERE ID_LAPTOP = :idLaptop
+    `;
+
+    const result = await connection.execute(query, binds);
+    await connection.commit();
+
+    const rowsAffected = result.rowsAffected || 0;
+    return rowsAffected;
+  } catch (error) {
+    if (connection) {
+      try { await connection.rollback(); } catch {}
+    }
+    throw error;
+  } finally {
+    if (connection) {
+      try { await connection.close(); } catch {}
+    }
+  }
+}
+
+/**
+ * Borrar laptop físicamente
+ * OJO: fallará con ORA-02292 si hay reservas que la referencian
+ */
+exports.disableLaptop = async (idLaptop) => {
+  let connection;
+  try {
+    connection = await db.getConnection();
+
+    const id = Number(idLaptop);
+    if (!Number.isInteger(id)) {
+      throw new Error('idLaptop inválido');
+    }
+
+    const result = await connection.execute(
+      `
+      UPDATE LAPTOP
+       SET ESTADO = 'baja' WHERE ID_LAPTOP = :idLaptop
+      `,
+      { idLaptop: id }
+    );
+
+    await connection.commit();
+
+    const rowsAffected = result.rowsAffected || 0;
+    return rowsAffected;
+  } catch (error) {
+    if (connection) {
+      try { await connection.rollback(); } catch {}
+    }
+    throw error;
+  } finally {
+    if (connection) {
+      try { await connection.close(); } catch {}
+    }
   }
 }

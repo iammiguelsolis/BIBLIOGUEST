@@ -8,9 +8,46 @@ services:
       - ORACLE_PASSWORD=${ORACLE_XE_PASSWORD}
       - APP_USER=BG_USER
       - APP_USER_PASSWORD=${ORACLE_XE_BG_USER_PASSWORD}
+      - ORACLE_CHARACTERSET=AL32UTF8
     volumes:
       - oracle-data:/opt/oracle/oradata
       - ./oracle/setup:/container-entrypoint-initdb.d:ro
     restart: unless-stopped
+    networks:
+      - biblioguest-network
+    healthcheck:
+      test: ["CMD", "sqlplus", "-v"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  backend:
+    build:
+      context: ./BACKEND
+      dockerfile: Dockerfile
+    container_name: biblioguest-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - ORACLE_USER=BG_USER
+      - ORACLE_PASSWORD=${ORACLE_XE_BG_USER_PASSWORD}
+      - ORACLE_CONNECTION_STRING=oracle:1521/FREEPDB1
+    volumes:
+      - ./BACKEND:/app
+      - /app/node_modules
+    depends_on:
+      oracle:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - biblioguest-network
+
 volumes:
   oracle-data: {}
+
+networks:
+  biblioguest-network:
+    driver: bridge

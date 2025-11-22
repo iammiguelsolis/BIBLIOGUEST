@@ -6,6 +6,7 @@ const cors = require('cors');
 
 const libro = require('./routes/libro');
 const laptop = require('./routes/laptop');
+const reservaLaptop = require('./routes/reservaLaptop');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.json());
 //rutas
 app.use("/", libro);
 app.use("/", laptop);
+app.use("/", reservaLaptop);
 
 // error middleware (debe ir al final)
 app.use(error);
