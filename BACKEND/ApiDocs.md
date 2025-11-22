@@ -415,3 +415,415 @@ Devuelve los datos básicos del ejemplar:
 
 - No requiere body.
 - Si no existe un ejemplar con ese **id**, se responderá con **404**.
+
+---
+## PRESTAMO LIBRO
+
+---
+### GET /prestamoLibro?idUsuario&idBibliotecario&idEjemplar&estado&fechaInicioDesde&fechaInicioHasta&fechaFinDesde&fechaFinHasta
+#### Campos:
+- **idUsuario** (Ej: 10, 25)
+- **idBibliotecario** (Ej: 2, 5)
+- **idEjemplar** (Ej: 3, 8)
+- **estado** (ENUM('activo', 'finalizado', 'atrasado'))
+- **fechaInicioDesde** (YYYY-MM-DD)
+- **fechaInicioHasta** (YYYY-MM-DD)
+- **fechaFinDesde** (YYYY-MM-DD)
+- **fechaFinHasta** (YYYY-MM-DD)
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de préstamos que coincidan con los filtros enviados.
+
+---
+### GET /prestamoLibro/:id
+
+> Para obtener un préstamo por su ID
+
+> id debe ser un número entero
+
+Devuelve los datos del préstamo desde la tabla **PrestamoLibro**:
+- idPrestamo
+- idUsuario
+- idBibliotecario
+- idEjemplar
+- fechaSolicitud
+- fechaInicio
+- fechaFin
+- fechaDevolucionReal
+- estado
+
+---
+### GET /prestamoLibro/:id/detalle
+
+> Para obtener un préstamo con información adicional
+
+> id debe ser un número entero
+
+Devuelve:
+- Datos del préstamo
+- Datos del usuario (nombre, código institucional)
+- Datos del bibliotecario (nombre) si existe
+- Datos del ejemplar (código de barra)
+- Datos del libro asociado (idLibro, título)
+
+---
+### POST /prestamoLibro
+
+> Para registrar un nuevo préstamo de libro (solicitud virtual).
+
+#### BODY:
+
+```json
+{
+  "idUsuario": 10,             // NUMBER (obligatorio, FK a USUARIO.id_usuario)
+  "idEjemplar": 5,             // NUMBER (obligatorio, FK a EJEMPLAR.id_ejemplar)
+  "fechaInicio": "2025-11-25", // YYYY-MM-DD (obligatorio)
+  "fechaFin": "2025-11-27"     // YYYY-MM-DD (obligatorio)
+}
+```
+
+**Reglas:**
+
+- Todos los campos del body son obligatorios.
+- Internamente se usa el procedimiento almacenado **pr_crear_prestamo_libro**.
+- La **fechaInicio** y **fechaFin** deben cumplir:
+  - fechaInicio ≥ fecha actual (no se puede iniciar en una fecha pasada).
+  - fechaFin ≥ fechaInicio.
+  - La duración `(fechaFin - fechaInicio + 1)` no puede superar el máximo de días permitido por las normas de la biblioteca (**NormasBiblioteca.dias_prestamo_libros**).
+- Si el préstamo quiere **iniciar hoy**, la solicitud solo se puede registrar **antes de las 12:00** (mediodía).  
+  Si ya pasó las 12:00, solo se permiten préstamos con fechaInicio a partir del día siguiente.
+- Al momento de crear el préstamo, **no se asigna bibliotecario**.  
+  El bibliotecario se asignará cuando el usuario se acerque a la biblioteca a recoger el libro.
+
+Si todo es correcto, se devuelve el **idPrestamo** creado.
+
+---
+### POST /prestamoLibro/:id/entregar
+
+> Para registrar la **entrega física** del libro al usuario en la biblioteca.
+
+> id debe ser un número entero (id del préstamo existente)
+
+#### BODY:
+
+```json
+{
+  "idBibliotecario": 2   // NUMBER (obligatorio, FK a BIBLIOTECARIO.id_bibliotecario)
+}
+```
+
+**Comportamiento:**
+
+- Internamente se usa el procedimiento **pr_asignar_bibliotecario_prestamo**.
+- El préstamo **no debe tener ya un bibliotecario asignado**.
+- La fecha actual debe estar **entre fechaInicio y fechaFin** del préstamo (inclusive).
+- La entrega solo se puede registrar si la hora actual está entre **10:00 y 12:00**.
+- Al registrar este endpoint, se asigna el bibliotecario responsable de la entrega del libro.
+
+---
+### POST /prestamoLibro/:id/devolver
+
+> Para registrar la devolución de un préstamo.
+
+> id debe ser un número entero (id del préstamo existente)
+
+#### BODY (opcional):
+
+```json
+{
+  "fechaDevolucion": "2025-11-28" // YYYY-MM-DD (opcional)
+}
+```
+
+**Comportamiento:**
+
+- Si **fechaDevolucion** no se envía, se tomará la fecha actual del sistema.
+- Internamente se usa el procedimiento **pr_devolver_prestamo_libro**.
+- Solo se puede registrar la devolución si la hora actual está entre **08:00 y 10:00**.
+- El sistema validará que el préstamo **no haya sido devuelto antes**.
+- Los triggers asociados actualizarán:
+  - El estado del préstamo (`activo`, `finalizado` o `atrasado`).
+  - El estado del ejemplar a `disponible` cuando corresponda.
+
+---
+### POST /prestamoLibro/:id/cancelar
+
+> Para **cancelar** un préstamo de libro antes de que inicie o antes de que sea entregado al usuario.
+
+> `id` debe ser un número entero (id del préstamo existente)
+
+#### BODY:
+
+No requiere body.
+
+**Comportamiento:**
+
+- Internamente se usa el procedimiento **`pr_cancelar_prestamo_libro`**.
+- Solo se puede cancelar un préstamo si:
+  - El préstamo **no ha sido devuelto** todavía (su `fechaDevolucionReal` es `NULL`).
+  - La fecha actual es **anterior** a la `fechaInicio` del préstamo,  
+    **o**, si es el mismo día de `fechaInicio`, aún **no tiene bibliotecario asignado** (el libro no ha sido entregado).
+- Si la cancelación es válida:
+  - El estado del préstamo se actualiza a **`cancelado`**.
+  - El **Ejemplar** asociado vuelve a estado **`disponible`**.
+- Si el préstamo ya fue devuelto, está en curso/vencido o ya fue entregado, el sistema devolverá un error informando que **no puede ser cancelado**.
+
+---
+## AUTOR
+
+---
+### GET /autor?nombre&apellido&nacionalidad
+#### Campos:
+- **nombre** (Ej: "Gabriel", "Mario")
+- **apellido** (Ej: "García Márquez", "Vargas Llosa")
+- **nacionalidad** (Ej: "Peruana", "Colombiana")
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de autores que coincidan con los filtros enviados.  
+También acepta los parámetros estándar de paginación:
+- **page** (por defecto: 1)
+- **limit** (por defecto: 10)
+
+---
+### GET /autor/:id
+
+> Para obtener un autor por su ID
+
+> **id** debe ser un número entero
+
+Devuelve los datos básicos del autor desde la tabla **Autor**:
+- idAutor
+- nombre
+- apellido
+- nacionalidad
+
+---
+### POST /autor
+
+> Para registrar un nuevo autor.
+
+#### BODY:
+
+```json
+{
+  "nombre": "Gabriel",
+  "apellido": "García Márquez",
+  "nacionalidad": "Colombiana"
+}
+```
+
+**Reglas:**
+
+- Los campos **nombre** y **apellido** son obligatorios.
+- El campo **nacionalidad** es opcional.
+- Devuelve el **idAutor** creado junto con un mensaje de confirmación.
+
+---
+### PUT /autor/:id
+
+> Para actualizar los datos de un autor existente.
+
+> **id** debe ser un número entero (id de un autor existente)
+
+#### BODY (al menos un campo):
+
+```json
+{
+  "nombre": "Gabriel",
+  "apellido": "García Márquez",
+  "nacionalidad": "Colombiana"
+}
+```
+
+**Reglas:**
+
+- Se puede enviar uno o varios campos para actualizar.
+- Si no se envía ningún campo en el body, se devolverá un error de validación.
+- Si el autor no existe, se responde con **404 - Autor no encontrado**.
+- Si la actualización es exitosa, devuelve un mensaje de confirmación.
+
+---
+### DELETE /autor/:id
+
+> Para eliminar un autor por su ID.
+
+> **id** debe ser un número entero
+
+**Comportamiento:**
+
+- Se realiza un **DELETE físico** sobre la tabla **Autor**.
+- Si el autor no existe, se responde con **404 - Autor no encontrado**.
+- Si el autor está referenciado por otras entidades (por ejemplo, en **LibroAutor**),  
+  la base de datos devolverá un error de integridad referencial y la API responderá con un error 409 o 500 según como se maneje.
+- Si la eliminación es exitosa, devuelve un mensaje de confirmación.
+
+---
+## ETIQUETA
+
+---
+### GET /etiqueta?nombre&descripcion
+#### Campos:
+- **nombre** (Ej: "Ficción", "Historia", "Ciencia")
+- **descripcion** (Ej: "Libros de divulgación", "Colección especial")
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de etiquetas que coincidan con los filtros enviados.  
+También acepta los parámetros estándar de paginación:
+- **page** (por defecto: 1)
+- **limit** (por defecto: 10)
+
+---
+### GET /etiqueta/:id
+
+> Para obtener una etiqueta por su ID
+
+> **id** debe ser un número entero
+
+Devuelve los datos básicos de la etiqueta desde la tabla **Etiquetas**:
+- idEtiqueta
+- nombre
+- descripcion
+
+---
+### POST /etiqueta
+
+> Para registrar una nueva etiqueta.
+
+#### BODY:
+
+```json
+{
+  "nombre": "Ciencia Ficción",
+  "descripcion": "Libros relacionados con ciencia ficción y fantasía"
+}
+```
+
+**Reglas:**
+
+- El campo **nombre** es obligatorio y debe ser único (no puede repetirse entre etiquetas).
+- El campo **descripcion** es opcional.
+- Devuelve el **idEtiqueta** creado junto con un mensaje de confirmación.
+
+---
+### PUT /etiqueta/:id
+
+> Para actualizar los datos de una etiqueta existente.
+
+> **id** debe ser un número entero (id de una etiqueta existente)
+
+#### BODY (al menos un campo):
+
+```json
+{
+  "nombre": "Ciencia Ficción",
+  "descripcion": "Libros de ciencia ficción, futurismo y fantasía"
+}
+```
+
+**Reglas:**
+
+- Se puede enviar uno o varios campos para actualizar.
+- Si no se envía ningún campo en el body, se devolverá un error de validación.
+- Si la etiqueta no existe, se responde con **404 - Etiqueta no encontrada**.
+- Si el nuevo nombre entra en conflicto con otra etiqueta ya existente, la base de datos devolverá un error de unicidad y la API responderá con un error apropiado (409/500 según manejo).
+- Si la actualización es exitosa, devuelve un mensaje de confirmación.
+
+---
+### DELETE /etiqueta/:id
+
+> Para eliminar una etiqueta por su ID.
+
+> **id** debe ser un número entero
+
+**Comportamiento:**
+
+- Se realiza un **DELETE físico** sobre la tabla **Etiquetas**.
+- Si la etiqueta no existe, se responde con **404 - Etiqueta no encontrada**.
+- Debido a que la tabla **LibroEtiquetas** tiene una FK con `ON DELETE CASCADE`,  
+  al eliminar una etiqueta se borrarán automáticamente sus asociaciones con libros.
+- Si la eliminación es exitosa, devuelve un mensaje de confirmación.
+
+---
+## CATEGORÍA
+
+---
+### GET /categoria?nombre&descripcion
+#### Campos:
+- **nombre** (Ej: "Programación", "Matemáticas")
+- **descripcion** (Ej: "Libros de desarrollo de software", "Cálculo, álgebra, etc.")
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de categorías que coincidan con los filtros enviados.  
+También acepta los parámetros estándar de paginación:
+- **page** (por defecto: 1)
+- **limit** (por defecto: 10)
+
+---
+### GET /categoria/:id
+
+> Para obtener una categoría por su ID
+
+> **id** debe ser un número entero
+
+Devuelve los datos básicos de la categoría desde la tabla **Categorias**:
+- idCategoria
+- nombre
+- descripcion
+
+---
+### POST /categoria
+
+> Para registrar una nueva categoría.
+
+#### BODY:
+
+```json
+{
+  "nombre": "Programación",
+  "descripcion": "Libros sobre programación y desarrollo de software"
+}
+```
+
+**Reglas:**
+
+- El campo **nombre** es obligatorio.
+- El campo **descripcion** es opcional.
+- Devuelve el **idCategoria** creado junto con un mensaje de confirmación.
+
+---
+### PUT /categoria/:id
+
+> Para actualizar los datos de una categoría existente.
+
+> **id** debe ser un número entero (id de una categoría existente)
+
+#### BODY (al menos un campo):
+
+```json
+{
+  "nombre": "Programación",
+  "descripcion": "Libros de programación, algoritmos y desarrollo de software"
+}
+```
+
+**Reglas:**
+
+- Se puede enviar uno o varios campos para actualizar.
+- Si no se envía ningún campo en el body, se devolverá un error de validación.
+- Si la categoría no existe, se responde con **404 - Categoría no encontrada**.
+- Si la actualización es exitosa, devuelve un mensaje de confirmación.
+
+---
+### DELETE /categoria/:id
+
+> Para eliminar una categoría por su ID.
+
+> **id** debe ser un número entero
+
+**Comportamiento:**
+
+- Se realiza un **DELETE físico** sobre la tabla **Categorias**.
+- Si la categoría no existe, se responde con **404 - Categoría no encontrada**.
+- Debido a que la tabla **CategoriasLibro** tiene una FK con `ON DELETE CASCADE`,  
+  al eliminar una categoría se borrarán automáticamente sus asociaciones con libros.
+- Si la eliminación es exitosa, devuelve un mensaje de confirmación.

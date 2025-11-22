@@ -1,4 +1,3 @@
-// src/services/ejemplar_service.js
 const model = require('../models/ejemplar_model');
 
 exports.getEjemplar = async (pagination = {}, data = {}) => {

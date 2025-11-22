@@ -1,4 +1,3 @@
-// src/controllers/ejemplar_controller.js
 const service = require('../services/ejemplar_service');
 const respuesta = require('../util/respuestas');
 
@@ -95,7 +94,6 @@ exports.deleteEjemplar = async (req, res) => {
       mensaje: 'Ejemplar eliminado exitosamente',
     }, 200);
   } catch (error) {
-    // Podrías chequear ORA-02292 para FK con PrestamoLibro si quieres mensaje más específico
     return respuesta.error(
       req,
       res,

@@ -1,8 +1,5 @@
-// src/models/ejemplar_model.js
 const db = require('../config/db');
 const oracledb = require('oracledb');
-
-// ----------------- COUNT + LISTADO CON FILTROS -----------------
 
 exports.countEjemplares = async (data = {}) => {
   const { idLibro, idBiblioteca, estado, codigoBarra } = data;
@@ -88,7 +85,6 @@ exports.getEjemplares = async (pagination = {}, data = {}) => {
   return result[0].rows;
 };
 
-// ----------------- GET BY ID -----------------
 
 exports.getEjemplarById = async (idEjemplar) => {
   const query = `
@@ -106,7 +102,6 @@ exports.getEjemplarById = async (idEjemplar) => {
   return result[0].rows[0];
 };
 
-// ----------------- CREATE / UPDATE / DELETE -----------------
 
 exports.createEjemplar = async (data) => {
   let connection;
@@ -202,7 +197,7 @@ exports.updateEjemplar = async (idEjemplar, data) => {
     }
 
     if (sets.length === 0) {
-      return 0; // nada que actualizar
+      return 0;
     }
 
     const query = `
@@ -254,7 +249,6 @@ exports.deleteEjemplar = async (idEjemplar) => {
   }
 };
 
-// ----------------- ESTADOS ESPECIALES: DETERIORAR / RESTAURAR -----------------
 
 exports.deteriorarEjemplar = async (idEjemplar) => {
   let connection;
