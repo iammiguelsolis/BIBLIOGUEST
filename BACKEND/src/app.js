@@ -5,6 +5,7 @@ const error = require("./middleware/errors");
 const cors = require('cors');
 
 const libro = require('./routes/libro');
+const ejemplar = require('./routes/ejemplar');
 const laptop = require('./routes/laptop');
 const reservaLaptop = require('./routes/reservaLaptop');
 
@@ -22,6 +23,7 @@ app.use(express.json());
 
 //rutas
 app.use("/", libro);
+app.use("/", ejemplar);
 app.use("/", laptop);
 app.use("/", reservaLaptop);
 

@@ -320,3 +320,98 @@ Devuelve:
 > id e idEtiqueta deben ser números enteros
 
 - Si no existe la relación libro-etiqueta, se responderá con **404**.
+
+---
+## EJEMPLAR
+
+---
+### GET /ejemplar?idLibro&idBiblioteca&estado&codigoBarra
+#### Campos:
+- **idLibro** (Ej: 1, 5, 10)
+- **idBiblioteca** (Ej: 1, 2, 3)
+- **estado** (ENUM('disponible', 'prestado', 'deteriorado'))
+- **codigoBarra** (Ej: "CB-001")
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de ejemplares que coincidan con los filtros enviados.
+
+---
+### GET /ejemplar/:id
+
+> Para obtener un ejemplar por su ID
+
+> id debe ser un número entero
+
+Devuelve los datos básicos del ejemplar:
+- idEjemplar, idLibro, idBiblioteca, codigoBarra, estado
+
+---
+### POST /ejemplar
+
+> Para registrar un nuevo ejemplar de un libro.
+
+#### BODY:
+
+```json
+{
+  "idLibro": 1,            // NUMBER (obligatorio, FK a LIBRO.id_libro)
+  "idBiblioteca": 1,       // NUMBER (opcional, FK a BIBLIOTECA.id_biblioteca)
+  "codigoBarra": "CB-001", // STRING (opcional, UNIQUE)
+  "estado": "disponible"   // ENUM('disponible', 'prestado', 'deteriorado') (opcional)
+}
+```
+
+- El campo **idLibro** es obligatorio.
+- Si **codigoBarra** ya existe, la BD devolverá error por la restricción UNIQUE.
+- Si se envía un **estado** distinto a `disponible`, `prestado` o `deteriorado`, la BD lo rechazará.
+
+---
+### PUT /ejemplar/:id
+
+> Para actualizar los datos de un ejemplar.
+
+> id debe ser un número entero
+
+#### BODY (ejemplo):
+
+```json
+{
+  "idLibro": 1,              // NUMBER (opcional)
+  "idBiblioteca": 2,         // NUMBER (opcional)
+  "codigoBarra": "CB-001-A", // STRING (opcional)
+  "estado": "deteriorado"    // ENUM('disponible', 'prestado', 'deteriorado') (opcional)
+}
+```
+
+- Ningún campo del body es obligatorio; solo se actualizarán los campos que se envíen.
+- Si no se encuentra un ejemplar con ese **id**, se responderá con **404**.
+
+---
+### DELETE /ejemplar/:id
+
+> Para eliminar físicamente un ejemplar
+
+> id debe ser un número entero
+
+- Si no existe un ejemplar con ese **id**, se responderá con **404**.
+- Si el ejemplar está referenciado en **PrestamoLibro**, la BD no permitirá su eliminación por la restricción de clave foránea.
+
+---
+### POST /ejemplar/:id/deteriorar
+
+> Para marcar rápidamente un ejemplar como `deteriorado`.
+
+> id debe ser un número entero
+
+- No requiere body.
+- Si no existe un ejemplar con ese **id**, se responderá con **404**.
+
+---
+### POST /ejemplar/:id/restaurar
+
+> Para marcar un ejemplar como `disponible` (por ejemplo, luego de reparación).
+
+> id debe ser un número entero
+
+- No requiere body.
+- Si no existe un ejemplar con ese **id**, se responderá con **404**.
