@@ -122,20 +122,59 @@ END;
 ----------------- PROCDURES ----------------------
 ------ Crear préstamo de libro (usa Normas de la Biblioteca del Ejemplar)
 CREATE OR REPLACE PROCEDURE pr_crear_prestamo_libro(
-  p_usuario        IN  NUMBER,
-  p_ejemplar       IN  NUMBER,
-  p_bibliotecario  IN  NUMBER,
-  p_id_prestamo    OUT NUMBER
+  p_usuario       IN  NUMBER,
+  p_ejemplar      IN  NUMBER,
+  p_fecha_inicio  IN  DATE,
+  p_fecha_fin     IN  DATE,
+  p_id_prestamo   OUT NUMBER
 ) IS
   v_estado_usr   VARCHAR2(15);
   v_activa       NUMBER;
   v_estado_ej    VARCHAR2(15);
   v_biblio       NUMBER;
-  v_dias         NUMBER;
+  v_dias_max     NUMBER;
+  v_dias_solic   NUMBER;
+  v_hora_actual  NUMBER;
+  v_hoy          DATE := TRUNC(SYSDATE);
+  v_ini          DATE;
   v_fin          DATE;
 BEGIN
-  --- Validar usuario
-  SELECT estado INTO v_estado_usr FROM Usuario WHERE id_usuario = p_usuario;
+  -- Validar fechas
+  IF p_fecha_inicio IS NULL OR p_fecha_fin IS NULL THEN
+    RAISE_APPLICATION_ERROR(-20030,'Debe indicar fecha de inicio y fecha de fin');
+  END IF;
+
+  v_ini := TRUNC(p_fecha_inicio);
+  v_fin := TRUNC(p_fecha_fin);
+
+  IF v_ini < v_hoy THEN
+    RAISE_APPLICATION_ERROR(-20031,'La fecha de inicio no puede ser anterior a hoy');
+  END IF;
+
+  IF v_fin < v_ini THEN
+    RAISE_APPLICATION_ERROR(-20032,'La fecha de fin no puede ser anterior a la fecha de inicio');
+  END IF;
+
+  -- Regla: si quiere iniciar HOY, debe solicitar antes de las 12:00
+  IF v_ini = v_hoy THEN
+    v_hora_actual :=
+      TO_NUMBER(TO_CHAR(SYSDATE,'HH24')) +
+      TO_NUMBER(TO_CHAR(SYSDATE,'MI')) / 60;
+
+    IF v_hora_actual >= 12 THEN
+      RAISE_APPLICATION_ERROR(
+        -20033,
+        'Para iniciar un préstamo hoy, la solicitud debe registrarse antes de las 12:00'
+      );
+    END IF;
+  END IF;
+
+  -- Validar usuario
+  SELECT estado
+    INTO v_estado_usr
+    FROM Usuario
+   WHERE id_usuario = p_usuario;
+
   IF v_estado_usr = 'bloqueado' THEN
     RAISE_APPLICATION_ERROR(-20001, 'Usuario bloqueado');
   END IF;
@@ -145,47 +184,192 @@ BEGIN
     RAISE_APPLICATION_ERROR(-20002, 'Usuario con sanción activa');
   END IF;
 
-  ---- Validar ejemplar y estado
-  SELECT e.estado, e.id_biblioteca INTO v_estado_ej, v_biblio
-    FROM Ejemplar e WHERE e.id_ejemplar = p_ejemplar
-    FOR UPDATE; -- bloquear ejemplar para evitar carreras
+  -- Validar ejemplar y obtener biblioteca
+  SELECT e.estado, e.id_biblioteca
+    INTO v_estado_ej, v_biblio
+    FROM Ejemplar e
+   WHERE e.id_ejemplar = p_ejemplar
+   FOR UPDATE;
 
   IF v_estado_ej <> 'disponible' THEN
     RAISE_APPLICATION_ERROR(-20003, 'Ejemplar no disponible');
   END IF;
 
-  ---- Días de préstamo desde Normas de la biblioteca (fallback 5 días)
+  -- Máximo de días desde NormasBiblioteca
   SELECT NVL(nb.dias_prestamo_libros, 5)
-    INTO v_dias
+    INTO v_dias_max
     FROM Biblioteca b
-    LEFT JOIN NormasBiblioteca nb ON nb.id_normas_biblioteca = b.id_normas_biblioteca
+    LEFT JOIN NormasBiblioteca nb
+      ON nb.id_normas_biblioteca = b.id_normas_biblioteca
    WHERE b.id_biblioteca = v_biblio;
 
-  v_fin := TRUNC(SYSDATE) + v_dias;
+  v_dias_solic := v_fin - v_ini + 1; -- conteo inclusivo
+
+  IF v_dias_solic <= 0 THEN
+    RAISE_APPLICATION_ERROR(-20034,'Rango de fechas inválido');
+  END IF;
+
+  IF v_dias_solic > v_dias_max THEN
+    RAISE_APPLICATION_ERROR(
+      -20035,
+      'La duración solicitada excede el máximo permitido por la biblioteca'
+    );
+  END IF;
 
   INSERT INTO PrestamoLibro(
-    id_usuario, id_bibliotecario, id_ejemplar,
-    fecha_solicitud, fecha_inicio, fecha_fin, fecha_devolucion_real, estado
+    id_usuario,
+    id_bibliotecario,
+    id_ejemplar,
+    fecha_solicitud,
+    fecha_inicio,
+    fecha_fin,
+    fecha_devolucion_real,
+    estado
   ) VALUES (
-    p_usuario, p_bibliotecario, p_ejemplar,
-    SYSTIMESTAMP, TRUNC(SYSDATE), v_fin, NULL, 'activo'
+    p_usuario,
+    NULL,                -- bibliotecario se asignará después
+    p_ejemplar,
+    SYSTIMESTAMP,        -- solicitud virtual
+    v_ini,
+    v_fin,
+    NULL,
+    'activo'
   )
   RETURNING id_prestamo INTO p_id_prestamo;
-
-  --- El trigger sincroniza el estado del Ejemplar a 'prestado'
 END;
 /
+
+CREATE OR REPLACE PROCEDURE pr_cancelar_prestamo_libro(
+  p_prestamo IN NUMBER
+) IS
+  v_estado        VARCHAR2(15);
+  v_fecha_inicio  DATE;
+  v_fecha_dev_real DATE;
+  v_id_ejemplar   NUMBER;
+  v_id_biblio     NUMBER;
+  v_hoy           DATE := TRUNC(SYSDATE);
+BEGIN
+  SELECT estado,
+         fecha_inicio,
+         fecha_devolucion_real,
+         id_ejemplar,
+         id_bibliotecario
+    INTO v_estado,
+         v_fecha_inicio,
+         v_fecha_dev_real,
+         v_id_ejemplar,
+         v_id_biblio
+    FROM PrestamoLibro
+   WHERE id_prestamo = p_prestamo
+   FOR UPDATE;
+
+  -- Ya devuelto -> no se puede cancelar
+  IF v_fecha_dev_real IS NOT NULL THEN
+    RAISE_APPLICATION_ERROR(-20041, 'El préstamo ya fue devuelto; no se puede cancelar');
+  END IF;
+
+  -- No permitir cancelar si ya está en curso o vencido
+  IF v_hoy > v_fecha_inicio THEN
+    RAISE_APPLICATION_ERROR(-20042, 'No se puede cancelar un préstamo en curso o vencido');
+  ELSIF v_hoy = v_fecha_inicio AND v_id_biblio IS NOT NULL THEN
+    RAISE_APPLICATION_ERROR(-20043, 'No se puede cancelar un préstamo ya entregado');
+  END IF;
+
+  -- Marcar como cancelado
+  UPDATE PrestamoLibro
+     SET estado = 'cancelado'
+   WHERE id_prestamo = p_prestamo;
+
+  -- Liberar ejemplar (queda disponible)
+  UPDATE Ejemplar
+     SET estado = 'disponible'
+   WHERE id_ejemplar = v_id_ejemplar;
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE pr_asignar_bibliotecario_prestamo(
+  p_prestamo      IN NUMBER,
+  p_bibliotecario IN NUMBER
+) IS
+  v_id_biblio    NUMBER;
+  v_fecha_inicio DATE;
+  v_fecha_fin    DATE;
+  v_hoy          DATE := TRUNC(SYSDATE);
+  v_hora_actual  NUMBER;
+BEGIN
+  SELECT id_bibliotecario,
+         fecha_inicio,
+         fecha_fin
+    INTO v_id_biblio,
+         v_fecha_inicio,
+         v_fecha_fin
+    FROM PrestamoLibro
+   WHERE id_prestamo = p_prestamo
+   FOR UPDATE;
+
+  IF v_id_biblio IS NOT NULL THEN
+    RAISE_APPLICATION_ERROR(-20036,'El préstamo ya tiene un bibliotecario asignado');
+  END IF;
+
+  IF v_hoy < v_fecha_inicio THEN
+    RAISE_APPLICATION_ERROR(
+      -20037,
+      'El préstamo aún no inicia; no se puede entregar el libro'
+    );
+  END IF;
+
+  IF v_hoy > v_fecha_fin THEN
+    RAISE_APPLICATION_ERROR(
+      -20038,
+      'El préstamo ya ha vencido; no se puede entregar el libro'
+    );
+  END IF;
+
+  -- Ventana de entrega: 10:00 - 12:00
+  v_hora_actual :=
+    TO_NUMBER(TO_CHAR(SYSDATE,'HH24')) +
+    TO_NUMBER(TO_CHAR(SYSDATE,'MI')) / 60;
+
+  IF v_hora_actual < 10 OR v_hora_actual >= 12 THEN
+    RAISE_APPLICATION_ERROR(
+      -20039,
+      'El libro solo se puede entregar entre las 10:00 y las 12:00'
+    );
+  END IF;
+
+  UPDATE PrestamoLibro
+     SET id_bibliotecario = p_bibliotecario
+   WHERE id_prestamo = p_prestamo;
+END;
+/
+
 
 --------------------- Devolver préstamo (marca devolución real = hoy por defecto)
 CREATE OR REPLACE PROCEDURE pr_devolver_prestamo_libro(
   p_prestamo IN NUMBER,
   p_fecha    IN DATE DEFAULT TRUNC(SYSDATE)
 ) IS
-  v_dev DATE;
+  v_dev         DATE;
+  v_hora_actual NUMBER;
 BEGIN
-  SELECT fecha_devolucion_real INTO v_dev
-    FROM PrestamoLibro WHERE id_prestamo = p_prestamo
-    FOR UPDATE;
+  -- Ventana de devolución: 08:00 - 10:00
+  v_hora_actual :=
+    TO_NUMBER(TO_CHAR(SYSDATE,'HH24')) +
+    TO_NUMBER(TO_CHAR(SYSDATE,'MI')) / 60;
+
+  IF v_hora_actual < 8 OR v_hora_actual >= 10 THEN
+    RAISE_APPLICATION_ERROR(
+      -20040,
+      'La devolución solo se puede registrar entre las 08:00 y las 10:00'
+    );
+  END IF;
+
+  SELECT fecha_devolucion_real
+    INTO v_dev
+    FROM PrestamoLibro
+   WHERE id_prestamo = p_prestamo
+   FOR UPDATE;
 
   IF v_dev IS NOT NULL THEN
     RAISE_APPLICATION_ERROR(-20004,'El préstamo ya fue devuelto');
@@ -195,9 +379,10 @@ BEGIN
      SET fecha_devolucion_real = TRUNC(p_fecha)
    WHERE id_prestamo = p_prestamo;
 
-  ---- Triggers ajustan estado y devuelven el ejemplar a 'disponible'
+  -- Triggers ajustan estado y devuelven el ejemplar a 'disponible'
 END;
 /
+
 
 --------------- Reservar Laptop (valida formato y no solape; el trigger también valida)
 CREATE OR REPLACE PROCEDURE pr_reservar_laptop(
@@ -383,9 +568,14 @@ END;
 
 ------------------ Ajusta estado del préstamo según fechas (activo/atrasado/finalizado)
 CREATE OR REPLACE TRIGGER trg_prestamo_ajusta_estado
-BEFORE INSERT OR UPDATE OF fecha_inicio, fecha_fin, fecha_devolucion_real ON PrestamoLibro
+BEFORE INSERT OR UPDATE OF fecha_inicio, fecha_fin, fecha_devolucion_real, estado 
+ON PrestamoLibro
 FOR EACH ROW
 BEGIN
+  IF :NEW.estado = 'cancelado' THEN
+    RETURN;
+  END IF;
+
   IF :NEW.fecha_devolucion_real IS NOT NULL THEN
     :NEW.estado := 'finalizado';
   ELSIF :NEW.fecha_fin IS NOT NULL AND TRUNC(SYSDATE) > :NEW.fecha_fin THEN
