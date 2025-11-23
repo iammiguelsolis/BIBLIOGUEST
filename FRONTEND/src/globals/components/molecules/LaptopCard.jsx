@@ -6,7 +6,6 @@
 
     function LaptopCard({
     name,
-    availableSeats = 1,
     os,              
     brand,
     timeSlots = [],
@@ -48,9 +47,7 @@
             <p className="text-sm text-neutral/70 mt-1">
             {brand} • {os}
             </p>
-            <Badge variant="info" icon={<User className="w-4 h-4" />}>
-            {availableSeats} asiento{availableSeats !== 1 ? 's' : ''}
-            </Badge>
+            
         </div>
 
         {/* selector de hora */}

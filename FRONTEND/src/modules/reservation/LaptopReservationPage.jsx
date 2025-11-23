@@ -6,7 +6,6 @@ const [filters, setFilters] = useState({
     date: new Date().toISOString().split('T')[0],
     startTime: "",
     duration: "",
-    peopleCount: "",
     searchQuery: "",
     os: "",              
     brand: "" 
@@ -24,13 +23,7 @@ const durationOptions = [
   "2 horas"
 ];
 
-const peopleOptions = [
-    { value: "1", label: "1 persona" },
-    { value: "2", label: "2 personas" },
-    { value: "3", label: "3 personas" },
-    { value: "4", label: "4 personas" },
-    { value: "5", label: "5+ personas" }
-];
+
 
 const osOptions = [
 { value: "Windows", label: "Windows" },
@@ -51,57 +44,49 @@ const brandOptions = [
     const allLaptops = [
     {
     id: 1,
-    name: "PC 03",
-    availableSeats: 1,
+    name: "Laptop 03",
     os: "Windows",      
     brand: "HP"
     },
     {
     id: 2,
-    name: "PC 04",
-    availableSeats: 1,
+    name: "Laptop 04",
     os: "Linux",         
     brand: "MSI" 
     },
     {
     id: 3,
-    name: "PC 05",
-    availableSeats: 1,
+    name: "Laptop 05",
     os: "Windows",       
     brand: "Dell"
     },
     {
     id: 4,
-    name: "PC 06",
-    availableSeats: 2,
+    name: "Laptop 06",
     os: "macOS",          
     brand: "Apple" 
     },
     {
     id: 5,
-    name: "PC 07",
-    availableSeats: 2,
+    name: "Laptop 07",
     os: "Linux",         
     brand: "Dell" 
     },
     {
     id: 6,
-    name: "PC 08",
-    availableSeats: 1,
+    name: "Laptop 08",
     os: "Windows",         
     brand: "MSI" 
     },
     {
     id: 7,
-    name: "PC 09",
-    availableSeats: 3,
+    name: "Laptop 09",
     os: "Linux",         
     brand: "MSI" 
     },
     {
     id: 8,
-    name: "PC 10",
-    availableSeats: 1,
+    name: "Laptop 10",
     os: "Linux",         
     brand: "MSI" 
     }
@@ -116,11 +101,6 @@ const filteredLaptops = useMemo(() => {
     durations: durationOptions,   
     }));
 
-    // filtro por numero de personas
-    if (filters.peopleCount) {
-    const count = parseInt(filters.peopleCount);
-    result = result.filter(laptop => laptop.availableSeats >= count);
-    }
 
     //filtro segun so
     if (filters.os) {
@@ -143,7 +123,7 @@ const filteredLaptops = useMemo(() => {
 
 
     return result;
-}, [filters.peopleCount,filters.os, filters.brand, filters.searchQuery]);
+}, [filters.os, filters.brand, filters.searchQuery]);
 
 
 
@@ -176,7 +156,6 @@ return (
     onSearch={handleSearch}
     startTimeOptions={startTimeOptions}
     durationOptions={durationOptions}
-    peopleOptions={peopleOptions}
     osOptions={osOptions}           
     brandOptions={brandOptions}
     selectedStartTime={filters.startTime}

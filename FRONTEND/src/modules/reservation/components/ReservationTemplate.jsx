@@ -11,7 +11,6 @@
     onSearch,
     startTimeOptions,
     durationOptions,
-    peopleOptions,
     osOptions,          
     brandOptions, 
     selectedStartTime,
@@ -19,6 +18,17 @@
     }) {
     return (
         <div className="min-h-screen flex flex-col bg-background">
+
+
+        {/* Titulo y Encabezado */}
+        <header className="mb-8">
+        <h1 className="text-4xl font-bold text-[#2D2D2D] mb-2">
+            Reserva de Computadoras
+        </h1>
+        <p className="text-lg text-gray-600">
+            Selecciona fecha, hora y reserva tu laptop.
+        </p>
+        </header>
 
         {/* Main Content */}
         <main className="flex-1 px-6 py-8 space-y-8 bg-red-50">
@@ -30,7 +40,6 @@
             onFiltersChange={onFiltersChange}
             startTimeOptions={startTimeOptions}
             durationOptions={durationOptions}
-            peopleOptions={peopleOptions}
             osOptions={osOptions}           
             brandOptions={brandOptions} 
             />
