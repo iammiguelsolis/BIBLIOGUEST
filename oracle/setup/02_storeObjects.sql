@@ -469,15 +469,20 @@ CREATE OR REPLACE PROCEDURE pr_reservar_cubiculo(
 BEGIN
   v_hini := TO_CHAR(TO_DATE(p_hora_inicio,'HH24:MI'),'HH24:MI');
   v_hfin := TO_CHAR(TO_DATE(p_hora_fin,   'HH24:MI'),'HH24:MI');
+
   IF fn_minutos(v_hini) >= fn_minutos(v_hfin) THEN
     RAISE_APPLICATION_ERROR(-20012,'hora_inicio debe ser menor que hora_fin');
   END IF;
 
-  SELECT estado INTO v_est FROM Cubiculo WHERE id_cubiculo = p_cubiculo;
+  SELECT estado INTO v_est
+    FROM Cubiculo
+   WHERE id_cubiculo = p_cubiculo;
+
   IF v_est = 'mantenimiento' THEN
     RAISE_APPLICATION_ERROR(-20013,'Cubículo en mantenimiento');
   END IF;
 
+  -- Solo bloquea contra reservas ACTIVAS, los borradores no bloquean.
   IF fn_reserva_solapa_cubiculo(p_cubiculo, TRUNC(p_fecha), v_hini, v_hfin, NULL) = 1 THEN
     RAISE_APPLICATION_ERROR(-20014,'Franja solapada con otra reserva activa');
   END IF;
@@ -486,25 +491,47 @@ BEGIN
     id_grupo_usuarios, id_bibliotecario, id_cubiculo,
     fecha_solicitud, fecha_reserva, hora_inicio, hora_fin, estado
   ) VALUES (
-    p_grupo, p_bibliotecario, p_cubiculo,
-    SYSTIMESTAMP, TRUNC(p_fecha), v_hini, v_hfin, 'activa'
+    p_grupo, NULL, p_cubiculo,
+    SYSTIMESTAMP, TRUNC(p_fecha), v_hini, v_hfin, 'pendiente'
   )
   RETURNING id_reserva INTO p_id_reserva;
 END;
 /
 
+
 ---------------- Cancelar reserva de Cubículo
-CREATE OR REPLACE PROCEDURE pr_cancelar_reserva_cubiculo(p_reserva IN NUMBER) IS
-  v_est VARCHAR2(15);
+CREATE OR REPLACE PROCEDURE pr_cancelar_reserva_cubiculo(
+  p_reserva IN NUMBER
+) IS
+  v_est   VARCHAR2(15);
+  v_fecha DATE;
+  v_hini  VARCHAR2(5);
 BEGIN
-  SELECT estado INTO v_est FROM ReservaCubiculo WHERE id_reserva = p_reserva FOR UPDATE;
-  IF v_est <> 'activa' THEN
-    RAISE_APPLICATION_ERROR(-20015,'Solo se pueden cancelar reservas activas');
+  SELECT estado,
+         fecha_reserva,
+         hora_inicio
+    INTO v_est,
+         v_fecha,
+         v_hini
+    FROM ReservaCubiculo
+   WHERE id_reserva = p_reserva
+   FOR UPDATE;
+
+  IF v_est IN ('cancelada','finalizada') THEN
+    RAISE_APPLICATION_ERROR(-20015,'La reserva ya no puede ser cancelada');
   END IF;
 
-  UPDATE ReservaCubiculo SET estado = 'cancelada' WHERE id_reserva = p_reserva;
+  -- Solo se puede cancelar antes del inicio
+  IF SYSTIMESTAMP >= fn_build_ts(v_fecha, v_hini) THEN
+    RAISE_APPLICATION_ERROR(-20029,'Solo se pueden cancelar reservas antes de la hora de inicio');
+  END IF;
+
+  UPDATE ReservaCubiculo
+     SET estado = 'cancelada'
+   WHERE id_reserva = p_reserva;
 END;
 /
+
 
 --------------------------------- TRIGGERS --------------------------------------------
 
@@ -684,4 +711,152 @@ BEGIN
            )
     ORDER BY "idLaptop", "fechaHoraInicio";
 END PRC_HORARIOS_DISP_LAPTOP;
+/
+
+CREATE OR REPLACE PROCEDURE pr_confirmar_reserva_cubiculo(
+  p_reserva IN NUMBER
+) IS
+  v_estado         VARCHAR2(15);
+  v_id_cubiculo    NUMBER;
+  v_fecha          DATE;
+  v_hini           VARCHAR2(5);
+  v_hfin           VARCHAR2(5);
+  v_id_grupo       NUMBER;
+  v_capacidad      NUMBER;
+  v_total_miembros NUMBER;
+  v_aceptados      NUMBER;
+BEGIN
+  -- Traemos datos de la reserva y el cubículo
+  SELECT r.estado,
+         r.id_cubiculo,
+         r.fecha_reserva,
+         r.hora_inicio,
+         r.hora_fin,
+         r.id_grupo_usuarios,
+         c.capacidad
+    INTO v_estado,
+         v_id_cubiculo,
+         v_fecha,
+         v_hini,
+         v_hfin,
+         v_id_grupo,
+         v_capacidad
+    FROM ReservaCubiculo r
+    JOIN Cubiculo c ON c.id_cubiculo = r.id_cubiculo
+   WHERE r.id_reserva = p_reserva
+   FOR UPDATE;
+
+  IF v_estado <> 'pendiente' THEN
+    RAISE_APPLICATION_ERROR(-20022,'Solo se pueden confirmar reservas en estado pendiente');
+  END IF;
+
+  -- Total de miembros del grupo
+  SELECT COUNT(*)
+    INTO v_total_miembros
+    FROM UsuarioGrupoUsuarios
+   WHERE id_grupo_usuarios = v_id_grupo;
+
+  -- Miembros que aceptaron
+  SELECT COUNT(*)
+    INTO v_aceptados
+    FROM UsuarioGrupoUsuarios
+   WHERE id_grupo_usuarios = v_id_grupo
+     AND estado_miembro = 'aceptado';
+
+  -- Todos deben aceptar
+  IF v_total_miembros = 0 OR v_aceptados <> v_total_miembros THEN
+    RAISE_APPLICATION_ERROR(-20023,'Todos los miembros deben aceptar la reserva');
+  END IF;
+
+  -- Mínimo 3 personas
+  IF v_aceptados < 3 THEN
+    RAISE_APPLICATION_ERROR(-20024,'Se requieren al menos 3 participantes aceptados');
+  END IF;
+
+  -- Máximo capacidad del cubículo
+  IF v_aceptados > v_capacidad THEN
+    RAISE_APPLICATION_ERROR(-20025,'El número de participantes excede la capacidad del cubículo');
+  END IF;
+
+  -- Verificar que al confirmar no se solape con OTRAS reservas activas
+  IF fn_reserva_solapa_cubiculo(
+       v_id_cubiculo,
+       TRUNC(v_fecha),
+       v_hini,
+       v_hfin,
+       p_reserva
+     ) = 1 THEN
+    RAISE_APPLICATION_ERROR(-20014,'Franja solapada con otra reserva activa');
+  END IF;
+
+  UPDATE ReservaCubiculo
+     SET estado = 'activa'
+   WHERE id_reserva = p_reserva;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE pr_registrar_ingreso_reserva_cubiculo(
+  p_reserva        IN NUMBER,
+  p_bibliotecario  IN NUMBER
+) IS
+  v_estado VARCHAR2(15);
+  v_fecha  DATE;
+  v_hini   VARCHAR2(5);
+  v_hfin   VARCHAR2(5);
+  v_now    TIMESTAMP;
+BEGIN
+  SELECT estado,
+         fecha_reserva,
+         hora_inicio,
+         hora_fin
+    INTO v_estado,
+         v_fecha,
+         v_hini,
+         v_hfin
+    FROM ReservaCubiculo
+   WHERE id_reserva = p_reserva
+   FOR UPDATE;
+
+  IF v_estado <> 'activa' THEN
+    RAISE_APPLICATION_ERROR(-20026,'Solo se puede registrar ingreso para reservas activas');
+  END IF;
+
+  v_now := SYSTIMESTAMP;
+
+  -- Debe ser el mismo día
+  IF TRUNC(v_now) <> TRUNC(v_fecha) THEN
+    RAISE_APPLICATION_ERROR(-20027,'Solo se puede registrar ingreso el día de la reserva');
+  END IF;
+
+  -- Dentro de la franja horaria
+  IF v_now < fn_build_ts(v_fecha, v_hini)
+     OR v_now > fn_build_ts(v_fecha, v_hfin) THEN
+    RAISE_APPLICATION_ERROR(-20028,'La hora de ingreso debe estar dentro del rango de la reserva');
+  END IF;
+
+  UPDATE ReservaCubiculo
+     SET id_bibliotecario = p_bibliotecario
+   WHERE id_reserva = p_reserva;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE pr_finalizar_reserva_cubiculo(
+  p_reserva IN NUMBER
+) IS
+  v_estado VARCHAR2(15);
+BEGIN
+  SELECT estado
+    INTO v_estado
+    FROM ReservaCubiculo
+   WHERE id_reserva = p_reserva
+   FOR UPDATE;
+
+  IF v_estado <> 'activa' THEN
+    RAISE_APPLICATION_ERROR(-20030,'Solo se pueden finalizar reservas activas');
+  END IF;
+
+  UPDATE ReservaCubiculo
+     SET estado = 'finalizada'
+   WHERE id_reserva = p_reserva;
+END;
 /

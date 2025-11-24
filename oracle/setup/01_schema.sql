@@ -523,9 +523,8 @@ CREATE INDEX ix_reservacubi_estado ON ReservaCubiculo
 ;
 
 ALTER TABLE ReservaCubiculo 
-    ADD CONSTRAINT ck_rc_estado 
-    CHECK (estado IN ('activa','cancelada','finalizada'))
-;
+  ADD CONSTRAINT ck_rc_estado
+  CHECK (estado IN ('pendiente','activa','cancelada','finalizada'));
 
 ALTER TABLE ReservaCubiculo 
     ADD CONSTRAINT ck_rc_hora_fin 
@@ -730,7 +729,8 @@ ALTER TABLE Usuario
 CREATE TABLE UsuarioGrupoUsuarios 
     ( 
      id_usuario        NUMBER  NOT NULL , 
-     id_grupo_usuarios NUMBER  NOT NULL 
+     id_grupo_usuarios NUMBER  NOT NULL ,
+     estado_miembro VARCHAR2 (15) DEFAULT 'pendiente'
     ) 
     TABLESPACE BiblioGuest
     LOGGING 
@@ -752,6 +752,13 @@ CREATE INDEX ix_ugu_grupo ON UsuarioGrupoUsuarios
 ALTER TABLE UsuarioGrupoUsuarios 
     ADD CONSTRAINT pk_usuario_grupo PRIMARY KEY ( id_usuario, id_grupo_usuarios )
     USING INDEX TABLESPACE BiblioGuest ;
+
+ALTER TABLE UsuarioGrupoUsuarios
+  ADD CONSTRAINT ck_ugu_estado
+  CHECK (
+    estado_miembro IN ('pendiente','aceptado','rechazado')
+    OR estado_miembro IS NULL
+  );
 
 CREATE TABLE Utilidad 
     ( 
