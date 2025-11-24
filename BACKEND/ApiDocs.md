@@ -827,3 +827,101 @@ Devuelve los datos básicos de la categoría desde la tabla **Categorias**:
 - Debido a que la tabla **CategoriasLibro** tiene una FK con `ON DELETE CASCADE`,  
   al eliminar una categoría se borrarán automáticamente sus asociaciones con libros.
 - Si la eliminación es exitosa, devuelve un mensaje de confirmación.
+
+---
+## CUBÍCULO
+
+---
+### GET /cubiculo?capacidadMin&capacidadMax&idBiblioteca&estado
+#### Campos:
+- **capacidadMin** (Ej: 2) → capacidad mínima de personas.
+- **capacidadMax** (Ej: 8) → capacidad máxima de personas.
+- **idBiblioteca** (Ej: 1, 4, 6) → ID de la biblioteca a la que pertenece el cubículo.
+- **estado** (ENUM('disponible', 'ocupado', 'mantenimiento'))
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de cubículos que coincidan con los filtros enviados.  
+También acepta los parámetros estándar de paginación:
+
+- **page** (por defecto: 1)
+- **limit** (por defecto: 10)
+
+---
+### GET /cubiculo/:id
+
+> Para obtener un cubículo por su ID
+
+> **id** debe ser un número entero
+
+Devuelve los datos básicos del cubículo desde la tabla **Cubiculo**:
+
+- idCubiculo
+- capacidad
+- idBiblioteca
+- estado
+
+---
+### POST /cubiculo
+
+> Para registrar un nuevo cubículo.
+
+#### BODY:
+
+```json
+{
+  "capacidad": 4,
+  "idBiblioteca": 1,
+  "estado": "disponible"
+}
+```
+
+**Reglas:**
+
+- Los campos **capacidad** e **idBiblioteca** son obligatorios.
+- `capacidad` debe ser un entero mayor o igual a 1.
+- `idBiblioteca` debe ser un ID válido de la tabla **Biblioteca**.
+- El campo **estado** es opcional. Si no se envía, se asumirá por defecto `disponible` (según la lógica del modelo/controlador).
+- Devuelve el **idCubiculo** creado junto con un mensaje de confirmación.
+
+---
+### PUT /cubiculo/:id
+
+> Para actualizar los datos de un cubículo existente.
+
+> **id** debe ser un número entero (id de un cubículo existente)
+
+#### BODY (al menos un campo):
+
+```json
+{
+  "capacidad": 6,
+  "idBiblioteca": 2,
+  "estado": "mantenimiento"
+}
+```
+
+**Reglas:**
+
+- Se puede enviar uno o varios campos para actualizar:
+  - `capacidad`
+  - `idBiblioteca`
+  - `estado`
+- Si no se envía ningún campo en el body, se devolverá un error de validación.
+- Si el cubículo no existe, se responde con **404 - Cubículo no encontrado**.
+- Si la actualización es exitosa, devuelve un mensaje de confirmación.
+
+---
+### DELETE /cubiculo/:id
+
+> Para eliminar un cubículo por su ID.
+
+> **id** debe ser un número entero
+
+**Comportamiento:**
+
+- Se realiza un **DELETE físico** sobre la tabla **Cubiculo**.
+- Si el cubículo no existe, se responde con **404 - Cubículo no encontrado**.
+- Si el cubículo está referenciado por otras entidades (por ejemplo, en **ReservaCubiculo**),  
+  la base de datos devolverá un error de integridad referencial y la API responderá con un error (409/500 según manejo).
+- Si la eliminación es exitosa, devuelve un mensaje de confirmación.
+
