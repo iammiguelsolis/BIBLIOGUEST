@@ -1,4 +1,3 @@
-// src/services/cubiculo_service.js
 const model = require('../models/cubiculo_model');
 
 exports.getCubiculo = async (pagination = {}, data = {}) => {

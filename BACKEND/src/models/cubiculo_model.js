@@ -1,8 +1,5 @@
-// src/models/cubiculo_model.js
 const db = require('../config/db');
 const oracledb = require('oracledb');
-
-// ================= COUNT + LISTADO =================
 
 exports.countCubiculos = async (data = {}) => {
   const { capacidadMin, capacidadMax, idBiblioteca, estado } = data;
@@ -87,7 +84,6 @@ exports.getCubiculos = async (pagination = {}, data = {}) => {
   return result[0].rows;
 };
 
-// ================= GET BY ID =================
 
 exports.getCubiculoById = async (idCubiculo) => {
   const query = `
@@ -104,7 +100,6 @@ exports.getCubiculoById = async (idCubiculo) => {
   return result[0].rows[0];
 };
 
-// ================= CREATE =================
 
 exports.createCubiculo = async (data) => {
   let connection;
@@ -161,7 +156,6 @@ exports.createCubiculo = async (data) => {
   }
 };
 
-// ================= UPDATE =================
 
 exports.updateCubiculo = async (idCubiculo, data) => {
   let connection;
@@ -224,8 +218,6 @@ exports.updateCubiculo = async (idCubiculo, data) => {
     }
   }
 };
-
-// ================= DELETE =================
 
 exports.deleteCubiculo = async (idCubiculo) => {
   let connection;

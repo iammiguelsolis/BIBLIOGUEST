@@ -1,8 +1,6 @@
-// src/controllers/cubiculo_controller.js
 const service = require('../services/cubiculo_service');
 const respuesta = require('../util/respuestas');
 
-// GET /cubiculo
 exports.getCubiculo = async (req, res) => {
   try {
     const pagination = {
@@ -24,7 +22,6 @@ exports.getCubiculo = async (req, res) => {
   }
 };
 
-// GET /cubiculo/:id
 exports.getCubiculoById = async (req, res) => {
   try {
     const idCubiculo = req.params.id;
@@ -40,7 +37,6 @@ exports.getCubiculoById = async (req, res) => {
   }
 };
 
-// POST /cubiculo
 exports.createCubiculo = async (req, res) => {
   try {
     const data = req.body;
@@ -70,7 +66,6 @@ exports.createCubiculo = async (req, res) => {
   }
 };
 
-// PUT /cubiculo/:id
 exports.updateCubiculo = async (req, res) => {
   try {
     const idCubiculo = req.params.id;
@@ -106,7 +101,6 @@ exports.updateCubiculo = async (req, res) => {
   }
 };
 
-// DELETE /cubiculo/:id
 exports.deleteCubiculo = async (req, res) => {
   try {
     const idCubiculo = req.params.id;
@@ -124,7 +118,6 @@ exports.deleteCubiculo = async (req, res) => {
       200
     );
   } catch (error) {
-    // Aquí podrías mapear ORA-02292 (FK) a 409 si quieres
     return respuesta.error(req, res, error.message, 500);
   }
 };

@@ -925,3 +925,314 @@ Devuelve los datos básicos del cubículo desde la tabla **Cubiculo**:
   la base de datos devolverá un error de integridad referencial y la API responderá con un error (409/500 según manejo).
 - Si la eliminación es exitosa, devuelve un mensaje de confirmación.
 
+---
+## RESERVA CUBÍCULO
+
+---
+### GET /reservaCubiculo?fechaReserva&idCubiculo&estado&idBibliotecario&idGrupoUsuarios&page&limit
+#### Campos (query params):
+- **fechaReserva** (YYYY-MM-DD) → Filtra por fecha de la reserva.
+- **idCubiculo** (Ej: 1, 2, 3) → ID del cubículo reservado.
+- **estado** (ENUM('pendiente','activa','cancelada','finalizada')) → Estado de la reserva.
+- **idBibliotecario** (Ej: 1, 4, 6) → Bibliotecario asociado a la reserva (cuando ya se registró el ingreso).
+- **idGrupoUsuarios** (Ej: 10, 11) → Grupo de usuarios asociado a la reserva.
+- **page** (por defecto: 1) → Página de la paginación.
+- **limit** (por defecto: 10) → Cantidad de registros por página.
+
+**Ningún campo es obligatorio.**  
+Devuelve una lista paginada de reservas de cubículo que coincidan con los filtros enviados.
+
+**Respuesta (ejemplo):**
+```json
+{
+  "data": [
+    {
+      "ID_RESERVA": 5,
+      "ID_GRUPO_USUARIOS": 12,
+      "ID_BIBLIOTECARIO": null,
+      "ID_CUBICULO": 3,
+      "FECHA_SOLICITUD": "2025-11-20T09:30:00",
+      "FECHA_RESERVA": "2025-11-25",
+      "HORA_INICIO": "10:00",
+      "HORA_FIN": "12:00",
+      "ESTADO": "pendiente"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_records": 1,
+    "per_page": 10
+  }
+}
+```
+
+---
+### GET /reservaCubiculo/:id
+
+> Para obtener una reserva de cubículo por su ID.
+
+> **id** debe ser un número entero.
+
+**Respuesta (ejemplo):**
+```json
+{
+  "ID_RESERVA": 5,
+  "ID_GRUPO_USUARIOS": 12,
+  "ID_BIBLIOTECARIO": null,
+  "ID_CUBICULO": 3,
+  "FECHA_SOLICITUD": "2025-11-20T09:30:00",
+  "FECHA_RESERVA": "2025-11-25",
+  "HORA_INICIO": "10:00",
+  "HORA_FIN": "12:00",
+  "ESTADO": "pendiente"
+}
+```
+---
+### GET /reservaCubiculo/:id/detalle
+
+> Para obtener el **detalle completo** de una reserva de cubículo.
+
+Incluye:
+- Datos de la reserva (fechas, horas, estado, etc.).  
+- Información del cubículo y su biblioteca.  
+- Información del bibliotecario (si ya fue asignado).  
+- Lista de miembros del grupo con su estado en la reserva (`aceptado`, `pendiente`, `rechazado`).
+
+> **id** debe ser un número entero.
+
+**Respuesta (ejemplo):**
+```json
+{
+  "reserva": {
+    "idReserva": 5,
+    "idGrupoUsuarios": 12,
+    "idCubiculo": 3,
+    "idBibliotecario": 2,
+    "fechaSolicitud": "2025-11-20T09:30:00",
+    "fechaReserva": "2025-11-25",
+    "horaInicio": "10:00",
+    "horaFin": "12:00",
+    "estado": "activa"
+  },
+  "cubiculo": {
+    "idCubiculo": 3,
+    "capacidad": 6,
+    "estado": "disponible",
+    "biblioteca": {
+      "idBiblioteca": 1,
+      "nombre": "Biblioteca FISI"
+    }
+  },
+  "bibliotecario": {
+    "idBibliotecario": 2,
+    "nombre": "Ana Pérez",
+    "correo": "ana.perez@unmsm.edu.pe",
+    "turno": "Mañana"
+  },
+  "miembros": [
+    {
+      "idUsuario": 8,
+      "nombre": "Mihael Cristobal",
+      "codigoInstitucional": "20201234",
+      "correo": "mihael@unmsm.edu.pe",
+      "estadoMiembro": "aceptado"
+    },
+    {
+      "idUsuario": 10,
+      "nombre": "Ricardo Matamoros",
+      "codigoInstitucional": "20205678",
+      "correo": "ricardo@unmsm.edu.pe",
+      "estadoMiembro": "aceptado"
+    },
+    {
+      "idUsuario": 11,
+      "nombre": "Johan Torres",
+      "codigoInstitucional": "20204567",
+      "correo": "johan@unmsm.edu.pe",
+      "estadoMiembro": "pendiente"
+    }
+  ]
+}
+```
+
+
+---
+### POST /reservaCubiculo
+
+> Para crear un **borrador de reserva de cubículo** (estado `pendiente`) y registrar el grupo de usuarios invitado.
+
+#### BODY (JSON):
+
+```json
+{
+  "idCubiculo": 3,
+  "idCreador": 8,
+  "fecha": "2025-11-25",
+  "horaInicio": "10:00",
+  "horaFin": "12:00",
+  "miembros": [8, 10, 11, 15]
+}
+```
+
+#### Reglas de negocio:
+
+- `idCubiculo` → obligatorio. Debe existir en la tabla **Cubiculo**.
+- `idCreador` → obligatorio. Usuario que crea la reserva (queda como aceptado automáticamente).
+- `fecha` → obligatoria. Formato **YYYY-MM-DD**.
+- `horaInicio`, `horaFin` → obligatorias. Formato **HH** o **HH:MI**.
+- `miembros` → arreglo con los IDs de usuarios invitados. El sistema asegura que el creador esté incluido.
+- Debe haber **al menos 3 participantes** (incluyendo al creador).
+- El cubículo no puede estar en estado `mantenimiento`.
+- No se debe solapar con **reservas activas** existentes para el mismo cubículo.
+- La reserva se crea en estado **`pendiente`** y **no bloquea** a otros grupos (otro grupo puede confirmar una reserva antes).
+
+**Respuesta (ejemplo):**
+```json
+{
+  "idReserva": 5,
+  "idGrupoUsuarios": 12
+}
+```
+
+---
+### POST /reservaCubiculo/:id/aceptar
+
+> Para que un usuario **acepte** la invitación a una reserva de cubículo.
+
+#### BODY (JSON):
+
+```json
+{
+  "idUsuario": 10
+}
+```
+
+#### Reglas:
+
+- La reserva debe estar en estado **`pendiente`**.
+- Debe existir una fila en `UsuarioGrupoUsuarios` que vincule al usuario con el grupo de la reserva.
+- Se actualiza `estado_miembro` a **`aceptado`** para ese usuario.
+
+**Respuesta (ejemplo):**
+```json
+{
+  "mensaje": "Invitación aceptada"
+}
+```
+
+Si no se encuentra la invitación para ese usuario en esa reserva, responde con **404**.
+
+---
+### POST /reservaCubiculo/:id/rechazar
+
+> Para que un usuario **rechace** la invitación a una reserva de cubículo.
+
+#### BODY (JSON):
+
+```json
+{
+  "idUsuario": 10
+}
+```
+
+#### Reglas:
+
+- La reserva debe estar en estado **`pendiente`**.
+- Se actualiza `estado_miembro` a **`rechazado`** para ese usuario.
+
+**Respuesta (ejemplo):**
+```json
+{
+  "mensaje": "Invitación rechazada"
+}
+```
+
+Si no se encuentra la invitación para ese usuario en esa reserva, responde con **404**.
+
+---
+### POST /reservaCubiculo/:id/confirmar
+
+> Intenta **confirmar** la reserva de cubículo (pasar de `pendiente` a `activa`).
+
+#### Reglas de negocio (validadas en el procedure `pr_confirmar_reserva_cubiculo`):
+
+- La reserva debe estar en estado **`pendiente`**.
+- Todos los miembros del grupo deben haber aceptado:
+  - `estado_miembro = 'aceptado'` para todos.
+- Debe haber **al menos 3 participantes** aceptados.
+- El número de aceptados no puede ser mayor que la **capacidad** del cubículo.
+- Se verifica nuevamente que no exista **solape** con otras reservas **activas** para el mismo cubículo, en la misma fecha y franja horaria.
+- Si otro grupo ya confirmó una reserva solapada mientras esta estaba pendiente, se devolverá un error de solape.
+
+**Respuesta (éxito):**
+```json
+{
+  "mensaje": "Reserva confirmada correctamente"
+}
+```
+
+---
+### POST /reservaCubiculo/:id/ingreso
+
+> Registra el **ingreso del grupo** al cubículo y asigna el bibliotecario que los atendió.
+
+#### BODY (JSON):
+
+```json
+{
+  "idBibliotecario": 3
+}
+```
+
+#### Reglas (procedure `pr_registrar_ingreso_reserva_cubiculo`):
+
+- La reserva debe estar en estado **`activa`**.
+- Solo se puede registrar ingreso **el mismo día de la reserva** (`TRUNC(SYSDATE) = fecha_reserva`).
+- La hora actual debe estar **dentro del rango** `[hora_inicio, hora_fin]`.
+- Se actualiza `id_bibliotecario` en la tabla **ReservaCubiculo**.
+
+**Respuesta (éxito):**
+```json
+{
+  "mensaje": "Ingreso registrado correctamente"
+}
+```
+
+---
+### POST /reservaCubiculo/:id/finalizar
+
+> Marca la reserva de cubículo como **finalizada**.
+
+#### Reglas (procedure `pr_finalizar_reserva_cubiculo`):
+
+- La reserva debe estar en estado **`activa`**.
+- Si se cumple, se actualiza `estado = 'finalizada'` en **ReservaCubiculo**.
+
+**Respuesta (éxito):**
+```json
+{
+  "mensaje": "Reserva finalizada correctamente"
+}
+```
+
+---
+### DELETE /reservaCubiculo/:id
+
+> Cancela una reserva de cubículo (cambio de estado a `cancelada`).
+
+#### Reglas (procedure `pr_cancelar_reserva_cubiculo`):
+
+- La reserva no debe estar ya en estado `cancelada` ni `finalizada`.
+- Solo se permite cancelar **antes de la hora de inicio** de la reserva.
+- Si ya empezó la franja horaria (o pasó), devuelve error y no se cancela.
+
+**Respuesta (éxito):**
+```json
+{
+  "mensaje": "Reserva cancelada correctamente"
+}
+```
+
+Si la reserva no existe, se responde con **404 - Reserva de cubículo no encontrada**.
+

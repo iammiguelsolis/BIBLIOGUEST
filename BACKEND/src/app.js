@@ -16,6 +16,7 @@ const laptop = require('./routes/laptop');
 const reservaLaptop = require('./routes/reservaLaptop');
 
 const cubiculo = require('./routes/cubiculo');
+const reservaCubiculo = require('./routes/reservaCubiculo');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/", laptop);
 app.use("/", reservaLaptop);
 
 app.use("/", cubiculo);
+app.use("/", reservaCubiculo);
 
 //ERROR HANDLER
 app.use(error);
