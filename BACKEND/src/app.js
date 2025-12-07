@@ -5,6 +5,8 @@ const error = require("./middleware/errors");
 const cors = require('cors');
 
 //-------------------- RUTAS IMPORT --------------------
+const auth = require('./routes/auth');
+
 const libro = require('./routes/libro');
 const autor = require('./routes/autor');
 const etiqueta = require('./routes/etiqueta');
@@ -30,6 +32,10 @@ app.set("port", config.app.port);
 app.use(express.json());
 
 //-------------------- RUTAS --------------------------
+// Auth (público y protegido)
+app.use("/auth", auth);
+
+// Recursos
 app.use("/", libro);
 app.use("/", autor);
 app.use("/", etiqueta);
