@@ -23,7 +23,7 @@
         {/* Titulo y Encabezado */}
         <header className="mb-8">
         <h1 className="text-4xl font-bold text-[#2D2D2D] mb-2">
-            Reserva de Computadoras
+            Reserva de Laptops
         </h1>
         <p className="text-lg text-gray-600">
             Selecciona fecha, hora y reserva tu laptop.
