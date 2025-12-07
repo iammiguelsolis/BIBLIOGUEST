@@ -1236,3 +1236,684 @@ Si no se encuentra la invitación para ese usuario en esa reserva, responde con 
 
 Si la reserva no existe, se responde con **404 - Reserva de cubículo no encontrada**.
 
+---
+## AUTENTICACIÓN
+
+> **Base URL**: `/auth`
+
+---
+### POST /auth/login
+
+> Para iniciar sesión y obtener un token JWT.
+
+#### BODY:
+
+```json
+{
+  "codigo": "20201234",           // STRING (código institucional o correo)
+  "password": "contraseña123"     // STRING (obligatorio)
+}
+```
+
+**Comportamiento:**
+
+- Busca el usuario en las tablas **Usuario**, **Bibliotecario** y **Administrador**.
+- Valida la contraseña con bcrypt.
+- Devuelve un token JWT válido por 8 horas (configurable).
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "mensaje": "Login exitoso",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "usuario": {
+      "id": 1,
+      "nombre": "Juan Pérez",
+      "correo": "juan@unmsm.edu.pe",
+      "rol": "estudiante"
+    }
+  }
+}
+```
+
+**Errores posibles:**
+- `400` - Código/correo y contraseña son requeridos
+- `401` - Credenciales inválidas
+- `401` - Usuario no ha configurado contraseña
+
+---
+### POST /auth/registro/estudiante
+
+> Para que un estudiante se registre en el sistema.
+
+#### BODY:
+
+```json
+{
+  "nombre": "Juan Pérez",
+  "codigoInstitucional": "20201234",
+  "correo": "juan@unmsm.edu.pe",
+  "password": "contraseña123",
+  "idUnidad": 1
+}
+```
+
+**Reglas:**
+
+- Todos los campos son obligatorios.
+- El código institucional debe ser único.
+- El correo debe ser único.
+- La contraseña se almacena hasheada con bcrypt.
+
+**Respuesta exitosa (201):**
+```json
+{
+  "error": false,
+  "status": 201,
+  "body": {
+    "mensaje": "Estudiante registrado exitosamente",
+    "idUsuario": 15,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Errores posibles:**
+- `400` - Campos obligatorios faltantes
+- `409` - Usuario con ese código ya existe
+- `409` - Usuario con ese correo ya existe
+
+---
+### POST /auth/registro/bibliotecario 🔒
+
+> Para registrar un nuevo bibliotecario (solo administradores).
+
+**Requiere:** `Authorization: Bearer <token_admin>`
+
+#### BODY:
+
+```json
+{
+  "nombre": "Ana López",
+  "correo": "ana@unmsm.edu.pe",
+  "password": "contraseña123",
+  "idBiblioteca": 1,
+  "turno": "Mañana"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "error": false,
+  "status": 201,
+  "body": {
+    "mensaje": "Bibliotecario registrado exitosamente",
+    "idBibliotecario": 5
+  }
+}
+```
+
+**Errores posibles:**
+- `401` - Token no proporcionado
+- `403` - Acceso denegado (solo administradores)
+- `409` - Bibliotecario con ese correo ya existe
+
+---
+### POST /auth/registro/administrador 🔒
+
+> Para registrar un nuevo administrador (solo administradores existentes).
+
+**Requiere:** `Authorization: Bearer <token_admin>`
+
+#### BODY:
+
+```json
+{
+  "nombre": "Admin Principal",
+  "correo": "admin@unmsm.edu.pe",
+  "password": "contraseña_segura"
+}
+```
+
+**Respuesta exitosa (201):**
+```json
+{
+  "error": false,
+  "status": 201,
+  "body": {
+    "mensaje": "Administrador registrado exitosamente",
+    "idAdministrador": 2
+  }
+}
+```
+
+---
+### GET /auth/perfil 🔒
+
+> Para obtener el perfil del usuario autenticado.
+
+**Requiere:** `Authorization: Bearer <token>`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "correo": "juan@unmsm.edu.pe",
+    "rol": "estudiante",
+    "codigoInstitucional": "20201234"
+  }
+}
+```
+
+---
+## USUARIO
+
+> Endpoints para gestión y consulta de usuarios.
+
+---
+### GET /usuario/invitaciones 🔒
+
+> Para que un estudiante vea sus invitaciones pendientes a reservas de cubículo.
+
+**Requiere:** `Authorization: Bearer <token>`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": [
+    {
+      "ID_RESERVA": 5,
+      "ID_CUBICULO": 3,
+      "FECHA_RESERVA": "2025-12-10",
+      "HORA_INICIO": "14:00",
+      "HORA_FIN": "16:00",
+      "ESTADO_RESERVA": "pendiente",
+      "CAPACIDAD_CUBICULO": 6,
+      "NOMBRE_BIBLIOTECA": "Biblioteca Central",
+      "ESTADO_MIEMBRO": "pendiente",
+      "NOMBRE_CREADOR": "Juan Pérez"
+    }
+  ]
+}
+```
+
+---
+### GET /usuario/mis-reservas-cubiculo 🔒
+
+> Para que un estudiante vea las reservas de cubículo donde participa.
+
+**Requiere:** `Authorization: Bearer <token>`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": [
+    {
+      "ID_RESERVA": 5,
+      "ID_CUBICULO": 3,
+      "FECHA_RESERVA": "2025-12-10",
+      "HORA_INICIO": "14:00",
+      "HORA_FIN": "16:00",
+      "ESTADO_RESERVA": "activa",
+      "CAPACIDAD_CUBICULO": 6,
+      "NOMBRE_BIBLIOTECA": "Biblioteca Central",
+      "ESTADO_MIEMBRO": "aceptado"
+    }
+  ]
+}
+```
+
+---
+### GET /usuario?nombre&codigo&correo&estado&idUnidad 🔒
+
+> Para buscar usuarios (solo bibliotecarios/administradores).
+
+**Requiere:** `Authorization: Bearer <token_biblio_o_admin>`
+
+#### Campos (query params):
+- **nombre** (Ej: "Juan") → Búsqueda parcial.
+- **codigo** (Ej: "20201234") → Código institucional exacto.
+- **correo** (Ej: "juan@unmsm") → Búsqueda parcial.
+- **estado** (ENUM: 'activo', 'sancionado')
+- **idUnidad** (Ej: 1, 2)
+
+**Ningún campo es obligatorio.**
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "total": 15,
+    "page": 1,
+    "limit": 10,
+    "data": [
+      {
+        "ID_USUARIO": 1,
+        "NOMBRE": "Juan Pérez",
+        "CODIGO_INSTITUCIONAL": "20201234",
+        "CORREO": "juan@unmsm.edu.pe",
+        "ESTADO": "activo",
+        "ID_UNIDAD": 1,
+        "NOMBRE_UNIDAD": "Facultad de Ingeniería"
+      }
+    ]
+  }
+}
+```
+
+---
+### GET /usuario/:id 🔒
+
+> Para obtener detalle de un usuario (solo bibliotecarios/administradores).
+
+**Requiere:** `Authorization: Bearer <token_biblio_o_admin>`
+
+> **id** debe ser un número entero
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "ID_USUARIO": 1,
+    "NOMBRE": "Juan Pérez",
+    "CODIGO_INSTITUCIONAL": "20201234",
+    "CORREO": "juan@unmsm.edu.pe",
+    "ESTADO": "activo",
+    "ID_UNIDAD": 1,
+    "NOMBRE_UNIDAD": "Facultad de Ingeniería"
+  }
+}
+```
+
+**Errores posibles:**
+- `404` - Usuario no encontrado
+
+---
+## SANCIÓN
+
+> Endpoints para gestión de sanciones a usuarios.
+
+---
+### GET /sancion/mis-sanciones 🔒
+
+> Para que un estudiante vea sus propias sanciones.
+
+**Requiere:** `Authorization: Bearer <token>`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": [
+    {
+      "ID_SANCION": 1,
+      "ID_USUARIO": 5,
+      "FECHA_INICIO": "2024-12-01",
+      "FECHA_FIN": "2024-12-07",
+      "MOTIVO": "Retraso en devolución de libro",
+      "ESTADO": "activa"
+    }
+  ]
+}
+```
+
+---
+### GET /sancion?idUsuario&estado&fechaDesde&fechaHasta 🔒
+
+> Para listar sanciones (solo bibliotecarios/administradores).
+
+**Requiere:** `Authorization: Bearer <token_biblio_o_admin>`
+
+#### Campos (query params):
+- **idUsuario** (Ej: 5) → Filtrar por usuario.
+- **estado** (ENUM: 'activa', 'cancelada')
+- **fechaDesde** (YYYY-MM-DD)
+- **fechaHasta** (YYYY-MM-DD)
+
+**Ningún campo es obligatorio.**
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "total": 3,
+    "page": 1,
+    "limit": 10,
+    "data": [
+      {
+        "ID_SANCION": 1,
+        "ID_USUARIO": 5,
+        "FECHA_INICIO": "2024-12-01",
+        "FECHA_FIN": "2024-12-07",
+        "MOTIVO": "Retraso en devolución",
+        "ESTADO": "activa",
+        "NOMBRE_USUARIO": "Juan Pérez",
+        "CODIGO_INSTITUCIONAL": "20201234"
+      }
+    ]
+  }
+}
+```
+
+---
+### GET /sancion/:id 🔒
+
+> Para obtener detalle de una sanción (solo bibliotecarios/administradores).
+
+**Requiere:** `Authorization: Bearer <token_biblio_o_admin>`
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "ID_SANCION": 1,
+    "ID_USUARIO": 5,
+    "FECHA_INICIO": "2024-12-01",
+    "FECHA_FIN": "2024-12-07",
+    "MOTIVO": "Retraso en devolución de libro",
+    "ESTADO": "activa",
+    "NOMBRE_USUARIO": "Juan Pérez",
+    "CODIGO_INSTITUCIONAL": "20201234",
+    "CORREO_USUARIO": "juan@unmsm.edu.pe"
+  }
+}
+```
+
+**Errores posibles:**
+- `404` - Sanción no encontrada
+
+---
+### POST /sancion 🔒
+
+> Para crear una nueva sanción (solo bibliotecarios/administradores).
+
+**Requiere:** `Authorization: Bearer <token_biblio_o_admin>`
+
+#### BODY:
+
+```json
+{
+  "idUsuario": 5,
+  "fechaInicio": "2024-12-07",
+  "fechaFin": "2024-12-14",
+  "motivo": "No devolvió libro a tiempo"
+}
+```
+
+**Reglas:**
+
+- `idUsuario`, `fechaInicio` y `fechaFin` son obligatorios.
+- `fechaFin` debe ser mayor o igual a `fechaInicio`.
+- El trigger de BD actualiza automáticamente el estado del usuario a 'sancionado'.
+
+**Respuesta exitosa (201):**
+```json
+{
+  "error": false,
+  "status": 201,
+  "body": {
+    "mensaje": "Sanción creada exitosamente",
+    "idSancion": 5
+  }
+}
+```
+
+**Errores posibles:**
+- `400` - Parámetros requeridos faltantes
+- `400` - Fecha fin anterior a fecha inicio
+
+---
+### PUT /sancion/:id 🔒
+
+> Para modificar una sanción (solo bibliotecarios/administradores).
+
+**Requiere:** `Authorization: Bearer <token_biblio_o_admin>`
+
+#### BODY (al menos un campo):
+
+```json
+{
+  "fechaInicio": "2024-12-07",
+  "fechaFin": "2024-12-21",
+  "motivo": "Retraso extendido",
+  "estado": "activa"
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "mensaje": "Sanción actualizada"
+  }
+}
+```
+
+**Errores posibles:**
+- `404` - Sanción no encontrada o sin cambios
+
+---
+### POST /sancion/:id/cancelar 🔒
+
+> Para cancelar una sanción (solo administradores).
+
+**Requiere:** `Authorization: Bearer <token_admin>`
+
+**No requiere body.**
+
+**Respuesta exitosa (200):**
+```json
+{
+  "error": false,
+  "status": 200,
+  "body": {
+    "mensaje": "Sanción cancelada"
+  }
+}
+```
+
+**Errores posibles:**
+- `403` - Acceso denegado (solo administradores)
+- `404` - Sanción no encontrada o ya cancelada
+
+---
+## CÓDIGOS DE ERROR
+
+### Estructura de Respuestas de Error
+
+Todas las respuestas de error siguen este formato:
+
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "Mensaje descriptivo del error"
+}
+```
+
+---
+### Códigos HTTP Comunes
+
+| Código | Significado | Ejemplo de Mensaje |
+|--------|-------------|-------------------|
+| `400` | Bad Request | "Parámetros requeridos: idUsuario, fechaInicio, fechaFin" |
+| `401` | Unauthorized | "Token de acceso no proporcionado" |
+| `403` | Forbidden | "Acceso denegado. Roles permitidos: bibliotecario, administrador" |
+| `404` | Not Found | "Libro no encontrado" |
+| `409` | Conflict | "Ya existe un libro con ese ISBN" |
+| `500` | Internal Error | "Error interno del servidor" |
+
+---
+### Errores de Autenticación (401)
+
+**Token no proporcionado:**
+```json
+{
+  "error": true,
+  "status": 401,
+  "body": "Token de acceso no proporcionado"
+}
+```
+
+**Token inválido o expirado:**
+```json
+{
+  "error": true,
+  "status": 401,
+  "body": "Token inválido o expirado"
+}
+```
+
+**Credenciales incorrectas (login):**
+```json
+{
+  "error": true,
+  "status": 401,
+  "body": "Credenciales inválidas"
+}
+```
+
+---
+### Errores de Autorización (403)
+
+**Rol insuficiente:**
+```json
+{
+  "error": true,
+  "status": 403,
+  "body": "Acceso denegado. Roles permitidos: bibliotecario, administrador"
+}
+```
+
+**Solo administradores:**
+```json
+{
+  "error": true,
+  "status": 403,
+  "body": "Acceso denegado. Roles permitidos: administrador"
+}
+```
+
+---
+### Errores de Validación (400)
+
+**Campos faltantes:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "Parámetros requeridos: idUsuario, idEjemplar, fechaInicio, fechaFin"
+}
+```
+
+**Formato de fecha inválido:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "Formato de fecha inválido. Use YYYY-MM-DD"
+}
+```
+
+**Hora inválida:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "Formato de hora inválido. Use HH o HH:MI"
+}
+```
+
+---
+### Errores de Negocio (desde procedimientos Oracle)
+
+**Usuario sancionado:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "ORA-20001: El usuario tiene una sanción activa y no puede realizar préstamos"
+}
+```
+
+**Ejemplar no disponible:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "ORA-20002: El ejemplar no está disponible para préstamo"
+}
+```
+
+**Solape de reservas:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "ORA-20010: Ya existe una reserva activa que solapa con el horario solicitado"
+}
+```
+
+**Mínimo de participantes:**
+```json
+{
+  "error": true,
+  "status": 400,
+  "body": "ORA-20011: El grupo debe tener al menos 3 miembros aceptados"
+}
+```
+
+---
+### Errores de Integridad (409/500)
+
+**Duplicado (UNIQUE constraint):**
+```json
+{
+  "error": true,
+  "status": 500,
+  "body": "ORA-00001: unique constraint (BG_OWNER.LIBRO_UK_ISBN) violated"
+}
+```
+
+**Referencia no encontrada (FK):**
+```json
+{
+  "error": true,
+  "status": 500,
+  "body": "ORA-02291: integrity constraint (BG_OWNER.FK_EJEMPLAR_LIBRO) violated - parent key not found"
+}
+```
+
+---
+## Leyenda de Permisos 🔒
+
+| Símbolo | Significado |
+|---------|-------------|
+| (sin símbolo) | Endpoint público, no requiere autenticación |
+| 🔒 | Requiere token JWT en header `Authorization: Bearer <token>` |
+| 🔒 Biblio+ | Requiere rol bibliotecario o administrador |
+| 🔒 Admin | Requiere rol administrador |
+

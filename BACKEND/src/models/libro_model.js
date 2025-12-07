@@ -118,34 +118,14 @@ exports.getLibroById = async (idLibro) => {
 
 
 exports.getLibroDetalleById = async (idLibro) => {
+  // Usa la vista VW_LIBRO_COMPLETO que ya tiene autores, categorías y etiquetas agregados
   const query = `
-    SELECT
-      l.ID_LIBRO,
-      l.ISBN,
-      l.TITULO,
-      l.SUBTITULO,
-      l.EDITORIAL,
-      l.NRO_EDICION,
-      l.ANIO,
-      a.ID_AUTOR,
-      a.NOMBRE  AS AUTOR_NOMBRE,
-      a.APELLIDO AS AUTOR_APELLIDO,
-      c.ID_CATEGORIA,
-      c.NOMBRE AS CATEGORIA_NOMBRE,
-      e.ID_ETIQUETA,
-      e.NOMBRE AS ETIQUETA_NOMBRE
-    FROM LIBRO l
-    LEFT JOIN LIBROAUTOR la      ON la.ID_LIBRO = l.ID_LIBRO
-    LEFT JOIN AUTOR a            ON a.ID_AUTOR = la.ID_AUTOR
-    LEFT JOIN CATEGORIASLIBRO cl ON cl.ID_LIBRO = l.ID_LIBRO
-    LEFT JOIN CATEGORIAS c       ON c.ID_CATEGORIA = cl.ID_CATEGORIA
-    LEFT JOIN LIBROETIQUETAS le  ON le.ID_LIBRO = l.ID_LIBRO
-    LEFT JOIN ETIQUETAS e        ON e.ID_ETIQUETA = le.ID_ETIQUETA
-    WHERE l.ID_LIBRO = :idLibro
+    SELECT * FROM VW_LIBRO_COMPLETO
+    WHERE ID_LIBRO = :idLibro
   `;
 
   const result = await db.query(query, { idLibro: Number(idLibro) });
-  return result[0].rows;
+  return result[0].rows[0] || null;
 };
 
 exports.createLibro = async (data) => {

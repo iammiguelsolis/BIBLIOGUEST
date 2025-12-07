@@ -184,37 +184,14 @@ exports.getPrestamoById = async (idPrestamo) => {
 
 
 exports.getPrestamoDetalleById = async (idPrestamo) => {
+  // Usa la vista VW_PRESTAMO_DETALLE que ya tiene todos los JOINs
   const query = `
-    SELECT
-      p.ID_PRESTAMO              AS "idPrestamo",
-      p.ID_USUARIO               AS "idUsuario",
-      u.NOMBRE                   AS "nombreUsuario",
-      u.CODIGO_INSTITUCIONAL     AS "codigoInstitucional",
-      p.ID_BIBLIOTECARIO         AS "idBibliotecario",
-      b.NOMBRE                   AS "nombreBibliotecario",
-      p.ID_EJEMPLAR              AS "idEjemplar",
-      e.CODIGO_BARRA             AS "codigoBarra",
-      l.ID_LIBRO                 AS "idLibro",
-      l.TITULO                   AS "tituloLibro",
-      p.FECHA_SOLICITUD          AS "fechaSolicitud",
-      p.FECHA_INICIO             AS "fechaInicio",
-      p.FECHA_FIN                AS "fechaFin",
-      p.FECHA_DEVOLUCION_REAL    AS "fechaDevolucionReal",
-      p.ESTADO                   AS "estado"
-    FROM PRESTAMOLIBRO p
-    JOIN USUARIO u
-      ON u.ID_USUARIO = p.ID_USUARIO
-    LEFT JOIN BIBLIOTECARIO b
-      ON b.ID_BIBLIOTECARIO = p.ID_BIBLIOTECARIO
-    JOIN EJEMPLAR e
-      ON e.ID_EJEMPLAR = p.ID_EJEMPLAR
-    JOIN LIBRO l
-      ON l.ID_LIBRO = e.ID_LIBRO
-    WHERE p.ID_PRESTAMO = :idPrestamo
+    SELECT * FROM VW_PRESTAMO_DETALLE
+    WHERE ID_PRESTAMO = :idPrestamo
   `;
 
   const result = await db.query(query, { idPrestamo: Number(idPrestamo) });
-  return result[0].rows[0];
+  return result[0].rows[0] || null;
 };
 
 
@@ -245,7 +222,7 @@ exports.createPrestamo = async (data) => {
     const result = await connection.execute(
       `
       BEGIN
-        pr_crear_prestamo_libro(
+        PKG_PRESTAMOS.crear(
           :p_usuario,
           :p_ejemplar,
           :p_fecha_inicio,
@@ -299,14 +276,14 @@ exports.devolverPrestamo = async (idPrestamo, fechaDevolucionStr) => {
       const fecha = parseFecha(fechaDevolucionStr);
       plsql = `
         BEGIN
-          pr_devolver_prestamo_libro(:p_prestamo, :p_fecha);
+          PKG_PRESTAMOS.devolver(:p_prestamo, :p_fecha);
         END;
       `;
       binds.p_fecha = { val: fecha, type: oracledb.DATE };
     } else {
       plsql = `
         BEGIN
-          pr_devolver_prestamo_libro(:p_prestamo);
+          PKG_PRESTAMOS.devolver(:p_prestamo);
         END;
       `;
     }
@@ -345,7 +322,7 @@ exports.asignarBibliotecario = async (idPrestamo, idBibliotecario) => {
     await connection.execute(
       `
       BEGIN
-        pr_asignar_bibliotecario_prestamo(
+        PKG_PRESTAMOS.entregar(
           :p_prestamo,
           :p_bibliotecario
         );
@@ -382,7 +359,7 @@ exports.cancelarPrestamo = async (idPrestamo) => {
     await connection.execute(
       `
       BEGIN
-        pr_cancelar_prestamo_libro(:p_prestamo);
+        PKG_PRESTAMOS.cancelar(:p_prestamo);
       END;
       `,
       {

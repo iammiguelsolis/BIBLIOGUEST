@@ -1,5 +1,15 @@
 require('dotenv').config();
 
+// Validación de variables de entorno requeridas
+const required = ['ORACLE_USER', 'ORACLE_PASSWORD', 'ORACLE_CONNECTION_STRING'];
+const missing = required.filter(v => !process.env[v]);
+
+if (missing.length > 0) {
+  console.error('❌ Variables de entorno faltantes:', missing.join(', '));
+  console.error('   Copia .env.example a .env y configúralo');
+  process.exit(1);
+}
+
 module.exports = {
   app: {
     port: process.env.PORT || 3000,
@@ -13,4 +23,4 @@ module.exports = {
     secret: process.env.JWT_SECRET || 'biblioguest-secret-key-change-in-production',
     expiresIn: process.env.JWT_EXPIRES_IN || '8h'
   }
-}
+};

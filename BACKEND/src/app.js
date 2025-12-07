@@ -20,6 +20,9 @@ const reservaLaptop = require('./routes/reservaLaptop');
 const cubiculo = require('./routes/cubiculo');
 const reservaCubiculo = require('./routes/reservaCubiculo');
 
+const sancion = require('./routes/sancion');
+const usuario = require('./routes/usuario');
+
 const app = express();
 
 //-------------------- MIDDLEWARES -------------------
@@ -48,6 +51,10 @@ app.use("/", reservaLaptop);
 
 app.use("/", cubiculo);
 app.use("/", reservaCubiculo);
+
+// Gestión de usuarios y sanciones
+app.use("/", sancion);
+app.use("/", usuario);
 
 //ERROR HANDLER
 app.use(error);
