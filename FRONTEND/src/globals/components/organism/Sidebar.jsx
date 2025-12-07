@@ -10,7 +10,7 @@ export const Sidebar = ({ isExpanded, onToggle }) => {
   const menuItems = [
     { name: 'Inicio', icon: Home, path: '/inicio' },
     { name: 'Laptops', icon: Laptop, path: '/laptop' },
-    { name: 'Cubiculos', icon: SquareUser, path: '/cubiculos' },
+    { name: 'Cubiculos', icon: SquareUser, path: '/cubiculo' },
     { name: 'Libros', icon: Book, path: '/libro' },
     { name: 'Donar', icon: Heart, path: '/donar' },
   ];
