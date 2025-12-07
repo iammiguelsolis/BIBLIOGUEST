@@ -1,7 +1,7 @@
 -- 02_storeObjects.sql
 
 ALTER SESSION SET CONTAINER = XEPDB1;
-ALTER SESSION SET CURRENT_SCHEMA = BG_USER;
+ALTER SESSION SET CURRENT_SCHEMA = BG_OWNER;
 
 --------------------- FUNCIONES ---------------------------
 ------- Convierte 'HH24:MI' a minutos desde 00:00 (para comparar horas)
