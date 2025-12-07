@@ -182,9 +182,11 @@ Devuelve:
 - Lista de **etiquetas** asociadas
 
 ---
-### POST /libro
+### POST /libro 🔒
 
 > Para registrar un nuevo libro en el sistema.
+
+**Requiere:** `Authorization: Bearer <token>` (bibliotecario o admin)
 
 #### BODY:
 
@@ -204,9 +206,11 @@ Devuelve:
 - Si no se envían `nroEdicion` o `anio`, se guardarán como NULL.
 
 ---
-### PUT /libro/:id
+### PUT /libro/:id 🔒
 
 > Para actualizar los datos de un libro.
+
+**Requiere:** `Authorization: Bearer <token>` (bibliotecario o admin)
 
 > id debe ser un número entero
 
@@ -228,9 +232,11 @@ Devuelve:
 - Si se cambia **isbn** a un valor que ya existe en otro libro, la BD dará error por la restricción UNIQUE.
 
 ---
-### DELETE /libro/:id
+### DELETE /libro/:id 🔒
 
 > Para eliminar físicamente un libro
+
+**Requiere:** `Authorization: Bearer <token>` (solo admin)
 
 > id debe ser un número entero
 
@@ -238,9 +244,11 @@ Devuelve:
 - Si el libro tiene **ejemplares asociados**, la BD no permitirá su eliminación por la restricción de clave foránea.
 
 ---
-### POST /libro/:id/autores
+### POST /libro/:id/autores 🔒
 
 > Para asignar o reemplazar la lista de autores asociados a un libro.
+
+**Requiere:** `Authorization: Bearer <token>` (bibliotecario o admin)
 
 > id debe ser un número entero
 
@@ -1250,8 +1258,8 @@ Si la reserva no existe, se responde con **404 - Reserva de cubículo no encontr
 
 ```json
 {
-  "codigo": "20201234",           // STRING (código institucional o correo)
-  "password": "contraseña123"     // STRING (obligatorio)
+  "identificador": "20201234",       // STRING (código institucional o correo)
+  "password": "contraseña123"        // STRING (obligatorio)
 }
 ```
 
@@ -1379,7 +1387,6 @@ Si la reserva no existe, se responde con **404 - Reserva de cubículo no encontr
   "nombre": "Ana López",
   "correo": "ana@unmsm.edu.pe",
   "password": "contraseña123",
-  "idBiblioteca": 1,
   "turno": "Mañana"
 }
 ```
@@ -1431,7 +1438,7 @@ Si la reserva no existe, se responde con **404 - Reserva de cubículo no encontr
 ```
 
 ---
-### GET /auth/perfil 🔒
+### GET /auth/me 🔒
 
 > Para obtener el perfil del usuario autenticado.
 

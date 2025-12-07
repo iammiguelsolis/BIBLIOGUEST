@@ -152,7 +152,8 @@ RETURNING id_grupo_usuarios INTO :v_grupo2;
 INSERT INTO GrupoUsuarios (id_grupo_usuarios) VALUES (DEFAULT)
 RETURNING id_grupo_usuarios INTO :v_grupo3;
 
--- 7) USUARIOS
+-- 7) USUARIOS (con password_hash para login - contraseña: 123)
+-- Hash bcrypt para "123": $2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse
 VAR v_user_mihael   NUMBER
 VAR v_user_ricardo  NUMBER
 VAR v_user_maye     NUMBER
@@ -163,40 +164,40 @@ VAR v_user_kevin    NUMBER
 VAR v_user_luisa    NUMBER
 VAR v_user_andrea   NUMBER
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Mihael Cristobal', '20201234', 'mihael@unmsm.edu.pe', 'activo', :v_fisi)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Mihael Cristobal', 'estudiante', 'mihael@unmsm.edu.pe', 'activo', :v_fisi, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_mihael;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Ricardo Matamoros', '20205678', 'ricardo@unmsm.edu.pe', 'activo', :v_fisi)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Ricardo Matamoros', '20205678', 'ricardo@unmsm.edu.pe', 'activo', :v_fisi, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_ricardo;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Maye Delgado', '20207890', 'maye@unmsm.edu.pe', 'activo', :v_flch)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Maye Delgado', '20207890', 'maye@unmsm.edu.pe', 'activo', :v_flch, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_maye;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Johan Torres', '20204567', 'johan@unmsm.edu.pe', 'activo', :v_fisi)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Johan Torres', '20204567', 'johan@unmsm.edu.pe', 'activo', :v_fisi, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_johan;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Miguel Solis', '20203456', 'miguel@unmsm.edu.pe', 'activo', :v_epi)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Miguel Solis', '20203456', 'miguel@unmsm.edu.pe', 'activo', :v_epi, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_miguel;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Fabrizio Ramos', '20206789', 'fabrizio@unmsm.edu.pe', 'activo', :v_fecon)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Fabrizio Ramos', '20206789', 'fabrizio@unmsm.edu.pe', 'activo', :v_fecon, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_fabrizio;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Kevin Soto', '20208901', 'kevin@unmsm.edu.pe', 'bloqueado', :v_fisi)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Kevin Soto', '20208901', 'kevin@unmsm.edu.pe', 'bloqueado', :v_fisi, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_kevin;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Luisa Pérez', '20209012', 'luisa@unmsm.edu.pe', 'activo', :v_fmed)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Luisa Pérez', '20209012', 'luisa@unmsm.edu.pe', 'activo', :v_fmed, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_luisa;
 
-INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad)
-VALUES ('Andrea Ruiz', '20204321', 'andrea@unmsm.edu.pe', 'activo', :v_flch)
+INSERT INTO Usuario (nombre, codigo_institucional, correo, estado, id_unidad, password_hash)
+VALUES ('Andrea Ruiz', '20204321', 'andrea@unmsm.edu.pe', 'activo', :v_flch, '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_usuario INTO :v_user_andrea;
 
 -- 8) USUARIO-GRUPO (invitaciones / estados miembro)
@@ -224,27 +225,34 @@ VALUES (:v_user_andrea, :v_grupo3, 'pendiente');
 INSERT INTO UsuarioGrupoUsuarios (id_usuario, id_grupo_usuarios, estado_miembro)
 VALUES (:v_user_maye, :v_grupo3, 'pendiente');
 
--- 9) BIBLIOTECARIOS
+-- 9) BIBLIOTECARIOS (con password_hash - contraseña: 123)
 VAR v_bib_ana    NUMBER
 VAR v_bib_luis   NUMBER
 VAR v_bib_carlos NUMBER
 VAR v_bib_maria  NUMBER
 
-INSERT INTO Bibliotecario (nombre, correo, turno)
-VALUES ('Ana Pérez', 'ana.perez@unmsm.edu.pe', 'Mañana')
+INSERT INTO Bibliotecario (nombre, correo, turno, password_hash)
+VALUES ('Ana Pérez', 'biblio', 'Mañana', '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_bibliotecario INTO :v_bib_ana;
 
-INSERT INTO Bibliotecario (nombre, correo, turno)
-VALUES ('Luis Rojas', 'luis.rojas@unmsm.edu.pe', 'Tarde')
+INSERT INTO Bibliotecario (nombre, correo, turno, password_hash)
+VALUES ('Luis Rojas', 'luis.rojas@unmsm.edu.pe', 'Tarde', '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_bibliotecario INTO :v_bib_luis;
 
-INSERT INTO Bibliotecario (nombre, correo, turno)
-VALUES ('Carlos Vega', 'carlos.vega@unmsm.edu.pe', 'Noche')
+INSERT INTO Bibliotecario (nombre, correo, turno, password_hash)
+VALUES ('Carlos Vega', 'carlos.vega@unmsm.edu.pe', 'Noche', '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_bibliotecario INTO :v_bib_carlos;
 
-INSERT INTO Bibliotecario (nombre, correo, turno)
-VALUES ('María López', 'maria.lopez@unmsm.edu.pe', 'Mañana')
+INSERT INTO Bibliotecario (nombre, correo, turno, password_hash)
+VALUES ('María López', 'maria.lopez@unmsm.edu.pe', 'Mañana', '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
 RETURNING id_bibliotecario INTO :v_bib_maria;
+
+-- 9.1) ADMINISTRADOR DE PRUEBA (contraseña: 123)
+VAR v_admin_test NUMBER
+
+INSERT INTO Administrador (nombre, correo, password_hash)
+VALUES ('Admin Test', 'admin', '$2a$10$HjSPaZaqCuhmuN0OtgM8Vu4uZZRTIL2cJo70XfBqYimeEu.EXgJse')
+RETURNING id_administrador INTO :v_admin_test;
 
 -- 10) CATEGORÍAS y ETIQUETAS
 VAR v_cat_cs      NUMBER

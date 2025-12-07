@@ -51,6 +51,8 @@ exports.verifyToken = (token) => {
  * @returns {object} { token, usuario }
  */
 exports.login = async (identificador, password) => {
+  console.log('[DEBUG] Login attempt:', { identificador, password: '***' });
+  
   if (!identificador || !password) {
     throw { status: 400, message: 'Identificador y contraseña son requeridos' };
   }
@@ -61,6 +63,7 @@ exports.login = async (identificador, password) => {
 
   // Intentar buscar como administrador (por correo)
   usuario = await authModel.findAdministradorByCorreo(identificador);
+  console.log('[DEBUG] Admin search result:', usuario ? 'FOUND' : 'NOT FOUND');
   if (usuario) {
     rol = 'administrador';
     idField = 'ID_ADMINISTRADOR';
@@ -69,6 +72,7 @@ exports.login = async (identificador, password) => {
   // Si no es admin, buscar como bibliotecario (por correo)
   if (!usuario) {
     usuario = await authModel.findBibliotecarioByCorreo(identificador);
+    console.log('[DEBUG] Biblio search result:', usuario ? 'FOUND' : 'NOT FOUND');
     if (usuario) {
       rol = 'bibliotecario';
       idField = 'ID_BIBLIOTECARIO';
@@ -79,9 +83,11 @@ exports.login = async (identificador, password) => {
   if (!usuario) {
     // Primero intentar por correo
     usuario = await authModel.findUsuarioByCorreo(identificador);
+    console.log('[DEBUG] Usuario by correo result:', usuario ? 'FOUND' : 'NOT FOUND');
     if (!usuario) {
       // Si no, intentar por código institucional
       usuario = await authModel.findUsuarioByCodigo(identificador);
+      console.log('[DEBUG] Usuario by codigo result:', usuario ? 'FOUND' : 'NOT FOUND');
     }
     if (usuario) {
       rol = 'estudiante';
@@ -91,11 +97,17 @@ exports.login = async (identificador, password) => {
 
   // Si no se encontró ningún usuario
   if (!usuario) {
+    console.log('[DEBUG] No user found for:', identificador);
     throw { status: 401, message: 'Credenciales inválidas' };
   }
 
+  console.log('[DEBUG] User found:', { rol, hasPasswordHash: !!usuario.PASSWORD_HASH });
+  console.log('[DEBUG] Password hash from DB:', usuario.PASSWORD_HASH);
+  console.log('[DEBUG] Hash length:', usuario.PASSWORD_HASH ? usuario.PASSWORD_HASH.length : 0);
+
   // Verificar contraseña
   const passwordValid = await this.comparePassword(password, usuario.PASSWORD_HASH);
+  console.log('[DEBUG] Password valid:', passwordValid);
   if (!passwordValid) {
     throw { status: 401, message: 'Credenciales inválidas' };
   }

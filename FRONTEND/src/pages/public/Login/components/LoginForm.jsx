@@ -1,9 +1,50 @@
-import Input from "../../../globals/components/atoms/Input"; 
-import Button from "../../../globals/components/atoms/Button"; 
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../../shared/hooks/useAuth';
+import Input from "../../../../shared/components/atoms/Input"; 
+import Button from "../../../../shared/components/atoms/Button"; 
 
 function LoginForm() { 
+  const [identificador, setIdentificador] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirigir a la página anterior o al inicio
+  const from = location.state?.from?.pathname || '/catalogo';
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    const result = await login(identificador, password);
+
+    if (result.success) {
+      // Redirigir según el rol
+      const rol = result.usuario.rol;
+      if (rol === 'administrador') {
+        navigate('/admin/bibliotecarios');
+      } else if (rol === 'bibliotecario') {
+        navigate('/gestion/prestamos');
+      } else if (rol === 'estudiante') {
+        navigate('/catalogo');
+      } else {
+        navigate(from);
+      }
+    } else {
+      setError(result.error || 'Credenciales inválidas');
+    }
+
+    setIsLoading(false);
+  };
+
   return ( 
-    <div className="bg-gradient-to-br from-surface/30 to-surface/10 backdrop-blur-sm p-10 rounded-2xl shadow-2xl max-w-md w-full space-y-6 border border-surface/30">
+    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-surface/30 to-surface/10 backdrop-blur-sm p-10 rounded-2xl shadow-2xl max-w-md w-full space-y-6 border border-surface/30">
       {/* Logo y título */}
       <div className="text-center space-y-4">
         <div className="flex justify-center mb-4">
@@ -26,12 +67,22 @@ function LoginForm() {
         </div>
       </div>
 
+      {/* Mensaje de error */}
+      {error && (
+        <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-sm text-center">
+          {error}
+        </div>
+      )}
+
       {/* Formulario */}
       <div className="space-y-5 pt-4">
         <div className="transform transition-all duration-200 hover:scale-[1.02]">
           <Input 
-            label="Correo Institucional" 
-            placeholder="usuario@unmsm.edu.pe" 
+            label="Correo o Código Institucional" 
+            placeholder="usuario@unmsm.edu.pe o código" 
+            value={identificador}
+            onChange={(e) => setIdentificador(e.target.value)}
+            required
           /> 
         </div>
         
@@ -40,6 +91,9 @@ function LoginForm() {
             label="Contraseña" 
             type="password" 
             placeholder="••••••••" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           /> 
         </div>
 
@@ -67,13 +121,15 @@ function LoginForm() {
       {/* Botón de ingreso */}
       <div className="pt-2">
         <Button 
+          type="submit"
           variant="primary" 
           className="w-full transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+          disabled={isLoading}
         >
-          Ingresar al Sistema
+          {isLoading ? 'Ingresando...' : 'Ingresar al Sistema'}
         </Button>
       </div>
-    </div> 
+    </form> 
   ); 
 } 
 

@@ -1,7 +1,7 @@
-import Navbar from '../../globals/components/organism/Navbar';
+import Navbar from '../../../shared/components/organism/Navbar';
 import HeroSection from './components/HeroSection';
-import Footer from '../../globals/components/organism/Footer';
-import NewsSection from '../../globals/components/organism/NewsSection';
+import Footer from '../../../shared/components/organism/Footer';
+import NewsSection from '../../../shared/components/organism/NewsSection';
 
 
 

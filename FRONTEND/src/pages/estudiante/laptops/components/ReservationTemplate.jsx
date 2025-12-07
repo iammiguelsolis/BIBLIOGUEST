@@ -1,7 +1,7 @@
-    import Navbar from "../../../globals/components/organism/Navbar";
-    import Footer from "../../../globals/components/organism/Footer";
-    import ReservationFilters from "../../../globals/components/organism/ReservationFilters";
-    import LaptopList from "../../../globals/components/organism/LaptopList";
+    import Navbar from "../../../../shared/components/organism/Navbar";
+    import Footer from "../../../../shared/components/organism/Footer";
+    import ReservationFilters from "../../../../shared/components/organism/ReservationFilters";
+    import LaptopList from "../../../../shared/components/organism/LaptopList";
 
     function ReservationTemplate({
     filters,
