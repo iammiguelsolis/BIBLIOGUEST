@@ -8,6 +8,7 @@ import "./styles.css";
 import { MainLayout } from "./globals/layaout/MainLayout";
 import LibrosPage from "./modules/libros/page/Libros";
 import Cubiculos from "./modules/cubiculos/page/Cubiculos";
+import Donaciones from "./modules/donaciones/page/Donaciones";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/laptop" element={<LaptopReservationPage />} />
           <Route path="/libro" element={<LibrosPage />} />
           <Route path="/cubiculo" element={<Cubiculos />} />
+          <Route path="/donar" element={<Donaciones />} />
         </Route>
       </Routes>
     </Router>
