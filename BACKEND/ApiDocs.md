@@ -1285,6 +1285,45 @@ Si la reserva no existe, se responde con **404 - Reserva de cubículo no encontr
 - `401` - Usuario no ha configurado contraseña
 
 ---
+### POST /auth/setup
+
+> Para crear el **primer administrador** del sistema.
+
+> ⚠️ **Este endpoint solo funciona si NO existe ningún administrador en la base de datos.**
+
+#### BODY:
+
+```json
+{
+  "nombre": "Administrador Principal",
+  "correo": "admin@unmsm.edu.pe",
+  "password": "contraseña_segura"
+}
+```
+
+**Reglas:**
+
+- Todos los campos son obligatorios.
+- Solo funciona cuando la tabla `Administrador` está vacía.
+- Una vez creado el primer admin, este endpoint devuelve error `403`.
+
+**Respuesta exitosa (201):**
+```json
+{
+  "error": false,
+  "status": 201,
+  "body": {
+    "mensaje": "Administrador inicial creado exitosamente",
+    "idAdministrador": 1
+  }
+}
+```
+
+**Errores posibles:**
+- `400` - Todos los campos son obligatorios
+- `403` - Ya existe un administrador. Use el endpoint de registro normal.
+
+---
 ### POST /auth/registro/estudiante
 
 > Para que un estudiante se registre en el sistema.
