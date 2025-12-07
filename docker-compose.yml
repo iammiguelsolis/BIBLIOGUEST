@@ -30,11 +30,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - ORACLE_USER=BG_OWNER
-      - ORACLE_PASSWORD=${ORACLE_XE_BG_OWNER_PASSWORD}
-      - ORACLE_CONNECTION_STRING=oracle:1521/FREEPDB1
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - ORACLE_USER=${ORACLE_USER}
+      - ORACLE_PASSWORD=${ORACLE_PASSWORD}
+      - ORACLE_CONNECTION_STRING=${ORACLE_CONNECTION_STRING}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
     volumes:
       - ./BACKEND:/app
       - /app/node_modules
