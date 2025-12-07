@@ -1,5 +1,5 @@
 ALTER SESSION SET CONTAINER = XEPDB1;
-ALTER SESSION SET CURRENT_SCHEMA = BG_USER;
+ALTER SESSION SET CURRENT_SCHEMA = BG_OWNER;
 
 -- ============================================================
 -- BiblioGuest - Script de Carga de Datos (ACTUALIZADO)

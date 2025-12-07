@@ -6,8 +6,8 @@ services:
       - "1521:1521"
     environment:
       - ORACLE_PASSWORD=${ORACLE_XE_PASSWORD}
-      - APP_USER=BG_USER
-      - APP_USER_PASSWORD=${ORACLE_XE_BG_USER_PASSWORD}
+      - APP_USER=BG_OWNER
+      - APP_USER_PASSWORD=${ORACLE_XE_BG_OWNER_PASSWORD}
       - ORACLE_CHARACTERSET=AL32UTF8
     volumes:
       - oracle-data:/opt/oracle/oradata
@@ -32,8 +32,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - ORACLE_USER=BG_USER
-      - ORACLE_PASSWORD=${ORACLE_XE_BG_USER_PASSWORD}
+      - ORACLE_USER=BG_OWNER
+      - ORACLE_PASSWORD=${ORACLE_XE_BG_OWNER_PASSWORD}
       - ORACLE_CONNECTION_STRING=oracle:1521/FREEPDB1
     volumes:
       - ./BACKEND:/app

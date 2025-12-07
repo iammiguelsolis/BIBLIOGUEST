@@ -93,7 +93,7 @@ exports.getDisponibilidad = async (data) => {
     const result = await connection.execute(
       `
       BEGIN
-        PRC_HORARIOS_DISP_LAPTOP(
+        PKG_RESERVAS.disponibilidad_laptop(
           :p_fecha_reserva,
           :p_hora_inicio,
           :p_duracion_horas,
@@ -159,7 +159,7 @@ exports.crearReserva = async (data) => {
 
     const result = await connection.execute(
       `BEGIN
-        pr_reservar_laptop(
+        PKG_RESERVAS.reservar_laptop(
           :p_usuario,
           :p_laptop,
           :p_fecha,
@@ -211,7 +211,7 @@ exports.cancelarReserva = async (idReserva) => {
 
     await connection.execute(
       `BEGIN
-        pr_cancelar_reserva_laptop(:p_id_reserva);
+        PKG_RESERVAS.cancelar_laptop(:p_id_reserva);
       END;`,
       {
         p_id_reserva: { val: id, type: oracledb.NUMBER },

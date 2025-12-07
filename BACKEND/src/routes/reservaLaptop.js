@@ -2,12 +2,20 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/reservaLaptop_controller');
 const validation = require('../middleware/validation');
+const auth = require('../middleware/authMiddleware');
 
-router.get('/reservaLaptop', validation.validatePagination, controller.getReserva);
+// Disponibilidad - Público
 router.get('/reservaLaptop/disponibilidad', controller.getDisponibilidad);
-router.get('/reservaLaptop/:id', controller.getReservaByID);
-router.post('/reservaLaptop', controller.crearReserva);
-router.post('/reservaLaptop/:id/finalizar', controller.finalizarReserva);
-router.delete('/reservaLaptop/:id', controller.cancelarReserva);
+
+// Lectura - Requiere autenticación
+router.get('/reservaLaptop', auth.requireAuth, validation.validatePagination, controller.getReserva);
+router.get('/reservaLaptop/:id', auth.requireAuth, controller.getReservaByID);
+
+// Crear y cancelar - Cualquier usuario autenticado
+router.post('/reservaLaptop', auth.requireAuth, controller.crearReserva);
+router.delete('/reservaLaptop/:id', auth.requireAuth, controller.cancelarReserva);
+
+// Finalizar - Solo bibliotecarios y admins
+router.post('/reservaLaptop/:id/finalizar', auth.requireBibliotecarioOrAdmin, controller.finalizarReserva);
 
 module.exports = router;
