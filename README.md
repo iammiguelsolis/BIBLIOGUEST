@@ -1,3 +1,10 @@
+# INTEGRANTES
+- Mihael Jhire Cristobal Rojas
+- Miguel Alonso Solis Cunza
+- Carol Sofia Montes Ramos
+- Ricardo Jose Matamoros Laura
+- Luis Arroyo Tapia
+
 # 📚 BiblioGest
 
 Sistema integral de gestión bibliotecaria desarrollado para la Universidad Nacional Mayor de San Marcos (UNMSM). BiblioGest permite la administración eficiente de préstamos de libros, reservas de laptops y cubículos, gestión de usuarios y sanciones.
