@@ -593,7 +593,7 @@ BEGIN
 END;
 /
 
------------------- Ajusta estado del préstamo según fechas (activo/atrasado/finalizado)
+------------------ Ajusta estado del préstamo según fechas (activo/atrasado/finalizado/finalizado_tardio)
 CREATE OR REPLACE TRIGGER trg_prestamo_ajusta_estado
 BEFORE INSERT OR UPDATE OF fecha_inicio, fecha_fin, fecha_devolucion_real, estado 
 ON PrestamoLibro
@@ -604,7 +604,12 @@ BEGIN
   END IF;
 
   IF :NEW.fecha_devolucion_real IS NOT NULL THEN
-    :NEW.estado := 'finalizado';
+    -- Verificar si devolvió después de la fecha límite
+    IF :NEW.fecha_devolucion_real > :NEW.fecha_fin THEN
+      :NEW.estado := 'finalizado_tardio';
+    ELSE
+      :NEW.estado := 'finalizado';
+    END IF;
   ELSIF :NEW.fecha_fin IS NOT NULL AND TRUNC(SYSDATE) > :NEW.fecha_fin THEN
     :NEW.estado := 'atrasado';
   ELSE

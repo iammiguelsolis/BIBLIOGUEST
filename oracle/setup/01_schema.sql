@@ -473,7 +473,7 @@ CREATE INDEX ix_prestamo_estado ON PrestamoLibro
 
 ALTER TABLE PrestamoLibro 
     ADD CONSTRAINT ck_prestamo_estado 
-    CHECK (estado IN ('activo','finalizado','atrasado', 'cancelado'))
+    CHECK (estado IN ('activo','finalizado','finalizado_tardio','atrasado','cancelado'))
 ;
 
 ALTER TABLE PrestamoLibro 

@@ -22,26 +22,38 @@ const menusPorRol = {
     { name: 'Donar', icon: Heart, path: '/donar' },
   ],
   bibliotecario: [
-    { name: 'Inicio', icon: Home, path: '/' },
+    { name: 'Inicio', icon: Home, path: '/catalogo' },
     { name: 'Catálogo', icon: Book, path: '/catalogo' },
     { divider: true, label: 'Gestión' },
-    { name: 'Préstamos', icon: BookOpen, path: '/gestion/prestamos' },
+    { name: 'Libros', icon: Book, path: '/gestion/libros' },
+    { name: 'Préstamos Libros', icon: BookOpen, path: '/gestion/prestamos' },
+    { divider: true, label: 'Laptops' },
+    { name: 'Gestión Laptops', icon: Laptop, path: '/gestion/laptops' },
     { name: 'Reservas Laptops', icon: Laptop, path: '/gestion/reservas/laptops' },
+    { divider: true, label: 'Cubículos' },
+    { name: 'Gestión Cubículos', icon: SquareUser, path: '/gestion/cubiculos' },
     { name: 'Reservas Cubículos', icon: SquareUser, path: '/gestion/reservas/cubiculos' },
-    { name: 'Usuarios', icon: Search, path: '/gestion/usuarios' },
+    { divider: true, label: 'Usuarios' },
+    { name: 'Buscar Usuarios', icon: Search, path: '/gestion/usuarios' },
   ],
   administrador: [
-    { name: 'Inicio', icon: Home, path: '/' },
+    { name: 'Inicio', icon: Home, path: '/catalogo' },
     { name: 'Catálogo', icon: Book, path: '/catalogo' },
     { divider: true, label: 'Administración' },
     { name: 'Bibliotecarios', icon: Users, path: '/admin/bibliotecarios' },
     { name: 'Sanciones', icon: Shield, path: '/admin/sanciones' },
     { name: 'Configuración', icon: Settings, path: '/admin/config' },
-    { divider: true, label: 'Gestión' },
-    { name: 'Préstamos', icon: BookOpen, path: '/gestion/prestamos' },
+    { divider: true, label: 'Gestión Libros' },
+    { name: 'Libros', icon: Book, path: '/gestion/libros' },
+    { name: 'Préstamos Libros', icon: BookOpen, path: '/gestion/prestamos' },
+    { divider: true, label: 'Laptops' },
+    { name: 'Gestión Laptops', icon: Laptop, path: '/gestion/laptops' },
     { name: 'Reservas Laptops', icon: Laptop, path: '/gestion/reservas/laptops' },
+    { divider: true, label: 'Cubículos' },
+    { name: 'Gestión Cubículos', icon: SquareUser, path: '/gestion/cubiculos' },
     { name: 'Reservas Cubículos', icon: SquareUser, path: '/gestion/reservas/cubiculos' },
-    { name: 'Usuarios', icon: Search, path: '/gestion/usuarios' },
+    { divider: true, label: 'Usuarios' },
+    { name: 'Buscar Usuarios', icon: Search, path: '/gestion/usuarios' },
   ],
 };
 
@@ -84,8 +96,29 @@ export const Sidebar = ({ isExpanded, onToggle }) => {
         </button>
       </header>
 
-      {/* Navegación */}
-      <nav className="flex-1">
+      {/* Navegación - scrollable con scrollbar sutil */}
+      <nav 
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,255,255,0.15) transparent'
+        }}
+      >
+        <style>{`
+          nav::-webkit-scrollbar {
+            width: 4px;
+          }
+          nav::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          nav::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+          }
+          nav::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.25);
+          }
+        `}</style>
         <ul className="space-y-2">
           {menuItems.map((item, index) => (
             item.divider ? (
@@ -110,8 +143,9 @@ export const Sidebar = ({ isExpanded, onToggle }) => {
       </nav>
 
       {/* Usuario y Logout */}
+      {/* Usuario y Logout - siempre visible */}
       {isAuthenticated && (
-        <div className={`mt-4 pt-4 border-t border-white/20 ${!isExpanded && 'hidden'}`}>
+        <div className={`flex-shrink-0 mt-4 pt-4 border-t border-white/20 ${!isExpanded && 'hidden'}`}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <User size={20} />
@@ -133,7 +167,7 @@ export const Sidebar = ({ isExpanded, onToggle }) => {
 
       {/* Botón Login si no está autenticado */}
       {!isAuthenticated && isExpanded && (
-        <div className="mt-4 pt-4 border-t border-white/20">
+        <div className="flex-shrink-0 mt-4 pt-4 border-t border-white/20">
           <button
             onClick={() => navigate('/login')}
             className="w-full px-4 py-2 bg-white text-red-600 rounded-lg font-medium hover:bg-white/90 transition-colors"
@@ -145,7 +179,7 @@ export const Sidebar = ({ isExpanded, onToggle }) => {
 
       {/* Pie de página */}
       <footer
-        className={`p-4 mt-auto border-t border-white/20 overflow-hidden ${
+        className={`flex-shrink-0 p-4 border-t border-white/20 overflow-hidden ${
           !isExpanded && 'hidden'
         }`}
       >

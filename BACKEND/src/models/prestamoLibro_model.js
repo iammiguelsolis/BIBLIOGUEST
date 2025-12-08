@@ -94,16 +94,32 @@ exports.getPrestamos = async (pagination = {}, data = {}) => {
 
   let query = `
     SELECT
-      ID_PRESTAMO,
-      ID_USUARIO,
-      ID_BIBLIOTECARIO,
-      ID_EJEMPLAR,
-      FECHA_SOLICITUD,
-      FECHA_INICIO,
-      FECHA_FIN,
-      FECHA_DEVOLUCION_REAL,
-      ESTADO
-    FROM PRESTAMOLIBRO
+      p.ID_PRESTAMO,
+      p.ID_USUARIO,
+      u.NOMBRE AS NOMBRE_USUARIO,
+      u.CODIGO_INSTITUCIONAL,
+      p.ID_BIBLIOTECARIO,
+      b.NOMBRE AS NOMBRE_BIBLIOTECARIO,
+      p.ID_EJEMPLAR,
+      l.ID_LIBRO,
+      l.TITULO AS TITULO_LIBRO,
+      l.ISBN,
+      p.FECHA_SOLICITUD,
+      p.FECHA_INICIO,
+      p.FECHA_FIN,
+      p.FECHA_DEVOLUCION_REAL,
+      p.ESTADO,
+      CASE 
+        WHEN p.FECHA_DEVOLUCION_REAL IS NOT NULL THEN
+          GREATEST(0, TRUNC(p.FECHA_DEVOLUCION_REAL) - TRUNC(p.FECHA_FIN))
+        ELSE
+          GREATEST(0, TRUNC(SYSDATE) - TRUNC(p.FECHA_FIN))
+      END AS DIAS_ATRASO
+    FROM PRESTAMOLIBRO p
+    JOIN USUARIO u ON u.ID_USUARIO = p.ID_USUARIO
+    JOIN EJEMPLAR e ON e.ID_EJEMPLAR = p.ID_EJEMPLAR
+    JOIN LIBRO l ON l.ID_LIBRO = e.ID_LIBRO
+    LEFT JOIN BIBLIOTECARIO b ON b.ID_BIBLIOTECARIO = p.ID_BIBLIOTECARIO
     WHERE 1 = 1
   `;
 
@@ -163,19 +179,40 @@ exports.getPrestamos = async (pagination = {}, data = {}) => {
 
 
 exports.getPrestamoById = async (idPrestamo) => {
+  // JOINs directos para traer todos los datos relacionados
   const query = `
     SELECT
-      ID_PRESTAMO,
-      ID_USUARIO,
-      ID_BIBLIOTECARIO,
-      ID_EJEMPLAR,
-      FECHA_SOLICITUD,
-      FECHA_INICIO,
-      FECHA_FIN,
-      FECHA_DEVOLUCION_REAL,
-      ESTADO
-    FROM PRESTAMOLIBRO
-    WHERE ID_PRESTAMO = :idPrestamo
+      p.ID_PRESTAMO,
+      p.ID_USUARIO,
+      u.NOMBRE AS NOMBRE_USUARIO,
+      u.CODIGO_INSTITUCIONAL,
+      u.CORREO AS CORREO_USUARIO,
+      p.ID_BIBLIOTECARIO,
+      b.NOMBRE AS NOMBRE_BIBLIOTECARIO,
+      p.ID_EJEMPLAR,
+      e.CODIGO_BARRA,
+      e.ESTADO AS ESTADO_EJEMPLAR,
+      l.ID_LIBRO,
+      l.TITULO AS TITULO_LIBRO,
+      l.ISBN,
+      l.EDITORIAL,
+      p.FECHA_SOLICITUD,
+      p.FECHA_INICIO,
+      p.FECHA_FIN,
+      p.FECHA_DEVOLUCION_REAL,
+      p.ESTADO,
+      CASE 
+        WHEN p.FECHA_DEVOLUCION_REAL IS NOT NULL THEN
+          GREATEST(0, TRUNC(p.FECHA_DEVOLUCION_REAL) - TRUNC(p.FECHA_FIN))
+        ELSE
+          GREATEST(0, TRUNC(SYSDATE) - TRUNC(p.FECHA_FIN))
+      END AS DIAS_ATRASO
+    FROM PRESTAMOLIBRO p
+    JOIN USUARIO u ON u.ID_USUARIO = p.ID_USUARIO
+    JOIN EJEMPLAR e ON e.ID_EJEMPLAR = p.ID_EJEMPLAR
+    JOIN LIBRO l ON l.ID_LIBRO = e.ID_LIBRO
+    LEFT JOIN BIBLIOTECARIO b ON b.ID_BIBLIOTECARIO = p.ID_BIBLIOTECARIO
+    WHERE p.ID_PRESTAMO = :idPrestamo
   `;
 
   const result = await db.query(query, { idPrestamo: Number(idPrestamo) });
@@ -184,10 +221,43 @@ exports.getPrestamoById = async (idPrestamo) => {
 
 
 exports.getPrestamoDetalleById = async (idPrestamo) => {
-  // Usa la vista VW_PRESTAMO_DETALLE que ya tiene todos los JOINs
+  // Usa la misma consulta con JOINs directos
   const query = `
-    SELECT * FROM VW_PRESTAMO_DETALLE
-    WHERE ID_PRESTAMO = :idPrestamo
+    SELECT
+      p.ID_PRESTAMO,
+      p.ID_USUARIO,
+      u.NOMBRE AS NOMBRE_USUARIO,
+      u.CODIGO_INSTITUCIONAL,
+      u.CORREO AS CORREO_USUARIO,
+      p.ID_BIBLIOTECARIO,
+      b.NOMBRE AS NOMBRE_BIBLIOTECARIO,
+      p.ID_EJEMPLAR,
+      e.CODIGO_BARRA,
+      e.ESTADO AS ESTADO_EJEMPLAR,
+      l.ID_LIBRO,
+      l.TITULO AS TITULO_LIBRO,
+      l.ISBN,
+      l.EDITORIAL,
+      bi.ID_BIBLIOTECA,
+      bi.NOMBRE AS NOMBRE_BIBLIOTECA,
+      p.FECHA_SOLICITUD,
+      p.FECHA_INICIO,
+      p.FECHA_FIN,
+      p.FECHA_DEVOLUCION_REAL,
+      p.ESTADO,
+      CASE 
+        WHEN p.FECHA_DEVOLUCION_REAL IS NOT NULL THEN
+          GREATEST(0, TRUNC(p.FECHA_DEVOLUCION_REAL) - TRUNC(p.FECHA_FIN))
+        ELSE
+          GREATEST(0, TRUNC(SYSDATE) - TRUNC(p.FECHA_FIN))
+      END AS DIAS_ATRASO
+    FROM PRESTAMOLIBRO p
+    JOIN USUARIO u ON u.ID_USUARIO = p.ID_USUARIO
+    JOIN EJEMPLAR e ON e.ID_EJEMPLAR = p.ID_EJEMPLAR
+    JOIN LIBRO l ON l.ID_LIBRO = e.ID_LIBRO
+    JOIN BIBLIOTECA bi ON bi.ID_BIBLIOTECA = e.ID_BIBLIOTECA
+    LEFT JOIN BIBLIOTECARIO b ON b.ID_BIBLIOTECARIO = p.ID_BIBLIOTECARIO
+    WHERE p.ID_PRESTAMO = :idPrestamo
   `;
 
   const result = await db.query(query, { idPrestamo: Number(idPrestamo) });
