@@ -16,6 +16,10 @@ import LibrosPage from "./pages/public/Catalogo/page/Libros";
 import LaptopReservationPage from "./pages/estudiante/laptops/LaptopReservationPage";
 import Cubiculos from "./pages/estudiante/cubiculos/page/Cubiculos";
 
+// Páginas de bibliotecario/admin
+import GestionLibros from "./pages/bibliotecario/libros/GestionLibros";
+import GestionPrestamos from "./pages/bibliotecario/prestamos/GestionPrestamos";
+
 // Otras páginas
 import Donaciones from "./pages/donaciones/page/Donaciones";
 
@@ -46,9 +50,16 @@ function App() {
         {/* Rutas de bibliotecario (biblio + admin) */}
         <Route element={<ProtectedRoute roles={['bibliotecario', 'administrador']} />}>
           <Route element={<MainLayout />}>
-            <Route path="/gestion/prestamos" element={<div className="p-10 text-2xl">Gestión Préstamos (próximamente)</div>} />
-            <Route path="/gestion/reservas/laptops" element={<div className="p-10 text-2xl">Gestión Reservas Laptops (próximamente)</div>} />
-            <Route path="/gestion/reservas/cubiculos" element={<div className="p-10 text-2xl">Gestión Reservas Cubículos (próximamente)</div>} />
+            {/* Libros */}
+            <Route path="/gestion/libros" element={<GestionLibros />} />
+            <Route path="/gestion/prestamos" element={<GestionPrestamos />} />
+            {/* Laptops */}
+            <Route path="/gestion/laptops" element={<div className="p-10 text-2xl">Gestión Laptops (próximamente)</div>} />
+            <Route path="/gestion/reservas/laptops" element={<div className="p-10 text-2xl">Reservas Laptops (próximamente)</div>} />
+            {/* Cubículos */}
+            <Route path="/gestion/cubiculos" element={<div className="p-10 text-2xl">Gestión Cubículos (próximamente)</div>} />
+            <Route path="/gestion/reservas/cubiculos" element={<div className="p-10 text-2xl">Reservas Cubículos (próximamente)</div>} />
+            {/* Usuarios */}
             <Route path="/gestion/usuarios" element={<div className="p-10 text-2xl">Buscar Usuarios (próximamente)</div>} />
           </Route>
         </Route>
