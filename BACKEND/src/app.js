@@ -22,6 +22,8 @@ const reservaCubiculo = require('./routes/reservaCubiculo');
 
 const sancion = require('./routes/sancion');
 const usuario = require('./routes/usuario');
+const bibliotecario = require('./routes/bibliotecario');
+const configuracion = require('./routes/configuracion');
 
 const app = express();
 
@@ -52,9 +54,11 @@ app.use("/", reservaLaptop);
 app.use("/", cubiculo);
 app.use("/", reservaCubiculo);
 
-// Gestión de usuarios y sanciones
+// Gestión de usuarios, bibliotecarios y sanciones
 app.use("/", sancion);
 app.use("/", usuario);
+app.use("/", bibliotecario);
+app.use("/", configuracion);
 
 //ERROR HANDLER
 app.use(error);

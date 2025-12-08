@@ -108,7 +108,9 @@ CREATE TABLE Bibliotecario
         ( START WITH 1 NOCACHE )  NOT NULL , 
      nombre           VARCHAR2 (150) , 
      correo           VARCHAR2 (150) , 
-     turno            VARCHAR2 (30) 
+     turno            VARCHAR2 (30) ,
+     estado           VARCHAR2 (15) DEFAULT 'activo' ,
+     password_hash    VARCHAR2 (255)
     ) 
     TABLESPACE BiblioGuest
     LOGGING 
