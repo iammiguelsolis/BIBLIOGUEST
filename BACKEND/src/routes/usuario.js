@@ -25,4 +25,16 @@ router.get('/usuario', auth.requireBibliotecarioOrAdmin, validation.validatePagi
 // Detalle de un usuario
 router.get('/usuario/:id', auth.requireBibliotecarioOrAdmin, controller.getUsuarioById);
 
+// Actividad del usuario (reservas/préstamos activos)
+router.get('/usuario/:id/actividad', auth.requireBibliotecarioOrAdmin, controller.getUsuarioActividad);
+
+// Crear usuario (estudiante)
+router.post('/usuario', auth.requireBibliotecarioOrAdmin, controller.createUsuario);
+
+// Actualizar usuario
+router.put('/usuario/:id', auth.requireBibliotecarioOrAdmin, controller.updateUsuario);
+
+// Eliminar usuario (soft delete)
+router.delete('/usuario/:id', auth.requireBibliotecarioOrAdmin, controller.deleteUsuario);
+
 module.exports = router;

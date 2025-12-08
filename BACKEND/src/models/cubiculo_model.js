@@ -229,10 +229,12 @@ exports.deleteCubiculo = async (idCubiculo) => {
       throw new Error('idCubiculo inválido');
     }
 
+    // Soft delete: cambiar estado a 'mantenimiento' (baja no es válido en el constraint)
     const result = await connection.execute(
       `
-      DELETE FROM CUBICULO
-      WHERE ID_CUBICULO = :idCubiculo
+      UPDATE CUBICULO
+         SET ESTADO = 'mantenimiento'
+       WHERE ID_CUBICULO = :idCubiculo
       `,
       { idCubiculo: id }
     );
