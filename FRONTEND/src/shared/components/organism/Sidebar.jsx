@@ -9,12 +9,12 @@ import { useAuth } from '../../hooks/useAuth';
 const menusPorRol = {
   // Sin autenticar - menú básico
   public: [
-    { name: 'Inicio', icon: Home, path: '/' },
+    { name: 'Inicio', icon: Home, path: '/dashboard' },
     { name: 'Catálogo', icon: Book, path: '/catalogo' },
     { name: 'Donar', icon: Heart, path: '/donar' },
   ],
   estudiante: [
-    { name: 'Inicio', icon: Home, path: '/' },
+    { name: 'Inicio', icon: Home, path: '/dashboard' },
     { name: 'Catálogo', icon: Book, path: '/catalogo' },
     { name: 'Laptops', icon: Laptop, path: '/laptops' },
     { name: 'Cubículos', icon: SquareUser, path: '/cubiculos' },
@@ -22,7 +22,7 @@ const menusPorRol = {
     { name: 'Donar', icon: Heart, path: '/donar' },
   ],
   bibliotecario: [
-    { name: 'Inicio', icon: Home, path: '/catalogo' },
+    { name: 'Inicio', icon: Home, path: '/gestion/dashboard' },
     { name: 'Catálogo', icon: Book, path: '/catalogo' },
     { divider: true, label: 'Gestión' },
     { name: 'Libros', icon: Book, path: '/gestion/libros' },
@@ -37,7 +37,7 @@ const menusPorRol = {
     { name: 'Buscar Usuarios', icon: Search, path: '/gestion/usuarios' },
   ],
   administrador: [
-    { name: 'Inicio', icon: Home, path: '/catalogo' },
+    { name: 'Inicio', icon: Home, path: '/gestion/dashboard' },
     { name: 'Catálogo', icon: Book, path: '/catalogo' },
     { divider: true, label: 'Administración' },
     { name: 'Bibliotecarios', icon: Users, path: '/admin/bibliotecarios' },

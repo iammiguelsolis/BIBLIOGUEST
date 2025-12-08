@@ -8,9 +8,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
  * Obtener préstamos de un usuario
  * @param {number} idUsuario - ID del usuario
  * @param {Object} filtros - Filtros opcionales
+ * @param {string} token - Token de autenticación
  * @returns {Promise<Object>} - Lista de préstamos
  */
-export const getMisPrestamos = async (idUsuario, filtros = {}) => {
+export const getMisPrestamos = async (idUsuario, filtros = {}, token = null) => {
   try {
     const params = new URLSearchParams();
     params.append('idUsuario', idUsuario);
@@ -19,10 +20,16 @@ export const getMisPrestamos = async (idUsuario, filtros = {}) => {
     if (filtros.page) params.append('page', filtros.page);
     if (filtros.limit) params.append('limit', filtros.limit);
 
+    const headers = {
+      'ngrok-skip-browser-warning': 'true'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_URL}/prestamoLibro?${params.toString()}`, {
-      headers: {
-        'ngrok-skip-browser-warning': 'true'
-      }
+      headers
     });
 
     if (!response.ok) {
