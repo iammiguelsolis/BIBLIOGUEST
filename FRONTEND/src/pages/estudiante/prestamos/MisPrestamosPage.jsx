@@ -30,14 +30,14 @@ export default function MisPrestamosPage() {
   }, [isAuthenticated, usuario]);
 
   const loadPrestamos = async () => {
-    if (!usuario?.idUsuario && !usuario?.id) return;
+    if (!usuario?.id) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const idUsuario = usuario.idUsuario || usuario.id;
-      const response = await getMisPrestamos(idUsuario, { limit: 50 });
+      const idUsuario = usuario.id;
+      const response = await getMisPrestamos(idUsuario, { limit: 50 }, token);
       const rawPrestamos = response.body?.data || response.body || [];
 
       const mapped = (Array.isArray(rawPrestamos) ? rawPrestamos : [])
