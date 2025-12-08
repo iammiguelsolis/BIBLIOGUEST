@@ -15,6 +15,9 @@ router.get('/reservaLaptop/:id', auth.requireAuth, controller.getReservaByID);
 router.post('/reservaLaptop', auth.requireAuth, controller.crearReserva);
 router.delete('/reservaLaptop/:id', auth.requireAuth, controller.cancelarReserva);
 
+// Confirmar (Entregar) - Solo bibliotecarios y admins
+router.post('/reservaLaptop/:id/confirmar', auth.requireBibliotecarioOrAdmin, controller.confirmarReserva);
+
 // Finalizar - Solo bibliotecarios y admins
 router.post('/reservaLaptop/:id/finalizar', auth.requireBibliotecarioOrAdmin, controller.finalizarReserva);
 

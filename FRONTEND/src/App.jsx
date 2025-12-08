@@ -19,6 +19,8 @@ import Cubiculos from "./pages/estudiante/cubiculos/page/Cubiculos";
 // Páginas de bibliotecario/admin
 import GestionLibros from "./pages/bibliotecario/libros/GestionLibros";
 import GestionPrestamos from "./pages/bibliotecario/prestamos/GestionPrestamos";
+import GestionLaptops from "./pages/bibliotecario/laptops/GestionLaptops";
+import GestionReservasLaptops from "./pages/bibliotecario/reservas/GestionReservasLaptops";
 
 // Otras páginas
 import Donaciones from "./pages/donaciones/page/Donaciones";
@@ -54,8 +56,8 @@ function App() {
             <Route path="/gestion/libros" element={<GestionLibros />} />
             <Route path="/gestion/prestamos" element={<GestionPrestamos />} />
             {/* Laptops */}
-            <Route path="/gestion/laptops" element={<div className="p-10 text-2xl">Gestión Laptops (próximamente)</div>} />
-            <Route path="/gestion/reservas/laptops" element={<div className="p-10 text-2xl">Reservas Laptops (próximamente)</div>} />
+            <Route path="/gestion/laptops" element={<GestionLaptops />} />
+            <Route path="/gestion/reservas/laptops" element={<GestionReservasLaptops />} />
             {/* Cubículos */}
             <Route path="/gestion/cubiculos" element={<div className="p-10 text-2xl">Gestión Cubículos (próximamente)</div>} />
             <Route path="/gestion/reservas/cubiculos" element={<div className="p-10 text-2xl">Reservas Cubículos (próximamente)</div>} />
