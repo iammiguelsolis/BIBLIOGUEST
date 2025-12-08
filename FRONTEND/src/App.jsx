@@ -29,6 +29,10 @@ import GestionBibliotecarios from "./pages/admin/bibliotecarios/GestionBibliotec
 import GestionSanciones from "./pages/admin/sanciones/GestionSanciones";
 import Configuracion from "./pages/admin/configuracion/Configuracion";
 
+// Dashboards
+import DashboardAdmin from "./pages/dashboard/DashboardAdmin";
+import DashboardEstudiante from "./pages/dashboard/DashboardEstudiante";
+
 // Otras páginas
 import Donaciones from "./pages/donaciones/page/Donaciones";
 
@@ -51,6 +55,7 @@ function App() {
         {/* Rutas de estudiante (requieren autenticación) */}
         <Route element={<ProtectedRoute roles={['estudiante']} />}>
           <Route element={<MainLayout />}>
+            <Route path="/dashboard" element={<DashboardEstudiante />} />
             <Route path="/laptops" element={<LaptopReservationPage />} />
             <Route path="/cubiculos" element={<Cubiculos />} />
             <Route path="/prestamos" element={<MisPrestamosPage />} />
@@ -60,6 +65,8 @@ function App() {
         {/* Rutas de bibliotecario (biblio + admin) */}
         <Route element={<ProtectedRoute roles={['bibliotecario', 'administrador']} />}>
           <Route element={<MainLayout />}>
+            {/* Dashboard */}
+            <Route path="/gestion/dashboard" element={<DashboardAdmin />} />
             {/* Libros */}
             <Route path="/gestion/libros" element={<GestionLibros />} />
             <Route path="/gestion/prestamos" element={<GestionPrestamos />} />
@@ -77,6 +84,7 @@ function App() {
         {/* Rutas de admin (solo admin) */}
         <Route element={<ProtectedRoute roles={['administrador']} />}>
           <Route element={<MainLayout />}>
+            <Route path="/admin/dashboard" element={<DashboardAdmin />} />
             <Route path="/admin/bibliotecarios" element={<GestionBibliotecarios />} />
             <Route path="/admin/sanciones" element={<GestionSanciones />} />
             <Route path="/admin/config" element={<Configuracion />} />

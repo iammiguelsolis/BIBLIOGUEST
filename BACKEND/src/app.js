@@ -24,6 +24,7 @@ const sancion = require('./routes/sancion');
 const usuario = require('./routes/usuario');
 const bibliotecario = require('./routes/bibliotecario');
 const configuracion = require('./routes/configuracion');
+const dashboard = require('./routes/dashboard');
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/", sancion);
 app.use("/", usuario);
 app.use("/", bibliotecario);
 app.use("/", configuracion);
+app.use("/", dashboard);
 
 //ERROR HANDLER
 app.use(error);
