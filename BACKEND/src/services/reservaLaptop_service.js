@@ -48,3 +48,12 @@ exports.finalizarReserva = async (idReserva) => {
 
   return true;
 }
+
+exports.confirmarReserva = async (idReserva, idBibliotecario) => {
+  const result = await model.confirmarReserva(idReserva, idBibliotecario);
+  
+  if(result === 0) {
+    return null;
+  }
+  return true;
+}

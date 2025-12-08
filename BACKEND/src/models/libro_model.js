@@ -261,6 +261,15 @@ exports.deleteLibro = async (idLibro) => {
   try {
     connection = await db.getConnection();
 
+
+    // 1. Borrar ejemplares primero (si no tienen préstamos históricos)
+    // Esto fallará si algún ejemplar tiene préstamos asociados (FK fk_prestamo_ejemplar)
+    await connection.execute(
+      `DELETE FROM EJEMPLAR WHERE ID_LIBRO = :idLibro`,
+      { idLibro: Number(idLibro) }
+    );
+
+    // 2. Borrar el libro
     const result = await connection.execute(
       `
       DELETE FROM LIBRO

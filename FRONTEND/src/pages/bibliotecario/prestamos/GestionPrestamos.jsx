@@ -86,6 +86,7 @@ export default function GestionPrestamos() {
   const [formData, setFormData] = useState({
     idUsuario: '',
     idEjemplar: '',
+    fechaInicio: '',
     fechaFin: ''
   });
 
@@ -186,10 +187,11 @@ export default function GestionPrestamos() {
       const data = await response.json();
       if (!data.error) {
         setModalNuevoOpen(false);
-        setFormData({ idUsuario: '', idEjemplar: '', fechaFin: '' });
+        setFormData({ idUsuario: '', idEjemplar: '', fechaInicio: '', fechaFin: '' });
+        setMensaje({ tipo: 'exito', texto: 'Préstamo creado exitosamente' });
         cargarPrestamos();
       } else {
-        alert(data.body || 'Error al crear préstamo');
+        setMensaje({ tipo: 'error', texto: data.body || 'Error al crear préstamo' });
       }
     } catch (err) {
       setMensaje({ tipo: 'error', texto: 'Error al crear préstamo' });
@@ -215,7 +217,11 @@ export default function GestionPrestamos() {
     try {
       const response = await fetch(`${API_URL}/prestamoLibro/${idPrestamo}/entregar`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
       });
 
       const data = await response.json();
@@ -235,7 +241,11 @@ export default function GestionPrestamos() {
     try {
       const response = await fetch(`${API_URL}/prestamoLibro/${idPrestamo}/devolver`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
       });
 
       const data = await response.json();
@@ -255,7 +265,11 @@ export default function GestionPrestamos() {
     try {
       const response = await fetch(`${API_URL}/prestamoLibro/${idPrestamo}/cancelar`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
       });
 
       const data = await response.json();
@@ -412,14 +426,27 @@ export default function GestionPrestamos() {
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Devolución</label>
-            <input
-              type="date"
-              value={formData.fechaFin}
-              onChange={(e) => setFormData({...formData, fechaFin: e.target.value})}
-              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio *</label>
+              <input
+                type="date"
+                value={formData.fechaInicio}
+                onChange={(e) => setFormData({...formData, fechaInicio: e.target.value})}
+                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Devolución *</label>
+              <input
+                type="date"
+                value={formData.fechaFin}
+                onChange={(e) => setFormData({...formData, fechaFin: e.target.value})}
+                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
+                required
+              />
+            </div>
           </div>
           <div className="flex gap-3 pt-4">
             <button
@@ -510,16 +537,46 @@ export default function GestionPrestamos() {
               )}
               
               {(prestamoSeleccionado.estado === 'activo' || prestamoSeleccionado.estado === 'atrasado') && (
-                <button
-                  onClick={() => mostrarConfirmacion(
-                    '¿Confirmar devolución del libro?',
-                    () => handleDevolverPrestamo(prestamoSeleccionado.idPrestamo)
+                <>
+                  {/* Si no tiene bibliotecario, se puede cancelar o entregar */}
+                  {!prestamoSeleccionado.idBibliotecario && (
+                    <>
+                      <button
+                        onClick={() => mostrarConfirmacion(
+                          '¿Confirmar entrega del libro al estudiante?',
+                          () => handleEntregarPrestamo(prestamoSeleccionado.idPrestamo)
+                        )}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Package size={18} />
+                        Confirmar Entrega
+                      </button>
+                      <button
+                        onClick={() => mostrarConfirmacion(
+                          '¿Cancelar este préstamo?',
+                          () => handleCancelarPrestamo(prestamoSeleccionado.idPrestamo)
+                        )}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <XCircle size={18} />
+                        Cancelar Préstamo
+                      </button>
+                    </>
                   )}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <CheckCircle size={18} />
-                  Registrar Devolución
-                </button>
+                  {/* Si ya tiene bibliotecario, se puede devolver */}
+                  {prestamoSeleccionado.idBibliotecario && (
+                    <button
+                      onClick={() => mostrarConfirmacion(
+                        '¿Confirmar devolución del libro?',
+                        () => handleDevolverPrestamo(prestamoSeleccionado.idPrestamo)
+                      )}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <CheckCircle size={18} />
+                      Registrar Devolución
+                    </button>
+                  )}
+                </>
               )}
 
               {['finalizado', 'finalizado_tardio', 'cancelado'].includes(prestamoSeleccionado.estado) && (

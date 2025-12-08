@@ -55,7 +55,7 @@ exports.getLaptops = async (pagination = {}, data) => {
       MODELO,
       ESTADO
     FROM LAPTOP
-    WHERE 1 = 1
+    WHERE UPPER(ESTADO) != 'BAJA'
   `;
 
   const binds = {};

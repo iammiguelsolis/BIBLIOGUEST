@@ -5,33 +5,7 @@ import { useAuth } from '../../../shared/hooks/useAuth';
 // URL base del API
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Componente Modal reutilizable
-const Modal = ({ show, onClose, title, children, size = 'md' }) => {
-  if (!show) return null;
-  
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl'
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden`}>
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
+import { Modal } from '../../../shared/components/molecules/Modal';
 
 // Componente principal
 export default function GestionLibros() {
@@ -49,6 +23,14 @@ export default function GestionLibros() {
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
   const [libroSeleccionado, setLibroSeleccionado] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
+  
+  // Estado para modal de confirmación
+  const [modalConfirmOpen, setModalConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  
+  // Estado para mensajes de error/éxito
+  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
 
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -147,6 +129,21 @@ export default function GestionLibros() {
     setModalFormOpen(true);
   };
 
+  // Función para mostrar modal de confirmación
+  const mostrarConfirmacion = (mensaje, accion) => {
+    setConfirmMessage(mensaje);
+    setConfirmAction(() => accion);
+    setModalConfirmOpen(true);
+  };
+
+  // Ejecutar acción confirmada
+  const ejecutarAccionConfirmada = async () => {
+    setModalConfirmOpen(false);
+    if (confirmAction) {
+      await confirmAction();
+    }
+  };
+
   const handleGuardarLibro = async (e) => {
     e.preventDefault();
     try {
@@ -166,18 +163,17 @@ export default function GestionLibros() {
       const data = await response.json();
       if (!data.error) {
         setModalFormOpen(false);
+        setMensaje({ tipo: 'exito', texto: modoEdicion ? 'Libro actualizado' : 'Libro creado' });
         cargarLibros();
       } else {
-        alert(data.body || 'Error al guardar');
+        setMensaje({ tipo: 'error', texto: data.body || 'Error al guardar' });
       }
     } catch (err) {
-      alert('Error al guardar libro');
+      setMensaje({ tipo: 'error', texto: 'Error al guardar libro' });
     }
   };
 
   const handleEliminarLibro = async (libro) => {
-    if (!confirm(`¿Eliminar "${libro.titulo}"?`)) return;
-    
     try {
       const response = await fetch(`${API_URL}/libro/${libro.idLibro}`, {
         method: 'DELETE',
@@ -185,13 +181,18 @@ export default function GestionLibros() {
       });
 
       const data = await response.json();
+      console.log('Respuesta eliminar:', data);
+      
       if (!data.error) {
+        setMensaje({ tipo: 'exito', texto: 'Libro eliminado correctamente' });
         cargarLibros();
       } else {
-        alert(data.body || 'Error al eliminar');
+        console.error('Error del backend:', data.body);
+        setMensaje({ tipo: 'error', texto: data.body || 'Error al eliminar' });
       }
     } catch (err) {
-      alert('Error al eliminar libro');
+      console.error('Error de red/fetch:', err);
+      setMensaje({ tipo: 'error', texto: 'Error al eliminar libro' });
     }
   };
 
@@ -295,7 +296,10 @@ export default function GestionLibros() {
                               <Edit size={18} />
                             </button>
                             <button
-                              onClick={() => handleEliminarLibro(libro)}
+                              onClick={() => mostrarConfirmacion(
+                                `¿Eliminar "${libro.titulo}"?`,
+                                () => handleEliminarLibro(libro)
+                              )}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Eliminar"
                             >
@@ -459,7 +463,10 @@ export default function GestionLibros() {
                 <button
                   onClick={() => {
                     setModalDetalleOpen(false);
-                    handleEliminarLibro(libroSeleccionado);
+                    mostrarConfirmacion(
+                      `¿Eliminar "${libroSeleccionado.titulo}"?`,
+                      () => handleEliminarLibro(libroSeleccionado)
+                    );
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
@@ -471,6 +478,48 @@ export default function GestionLibros() {
           </div>
         )}
       </Modal>
+
+      {/* Modal Confirmación */}
+      <Modal
+        show={modalConfirmOpen}
+        onClose={() => setModalConfirmOpen(false)}
+        title="Confirmar Acción"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">{confirmMessage}</p>
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setModalConfirmOpen(false)}
+              className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={ejecutarAccionConfirmada}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Notificación */}
+      {mensaje.texto && (
+        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-lg text-white ${
+          mensaje.tipo === 'error' ? 'bg-red-600' : 
+          mensaje.tipo === 'exito' ? 'bg-green-600' : 'bg-blue-600'
+        } transition-all duration-300 z-50 flex items-center`}>
+          {mensaje.texto}
+          <button 
+            onClick={() => setMensaje({ tipo: '', texto: '' })}
+            className="ml-4 hover:text-gray-200"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
