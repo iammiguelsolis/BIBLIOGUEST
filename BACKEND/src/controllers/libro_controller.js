@@ -104,10 +104,11 @@ exports.deleteLibro = async (req, res) => {
       mensaje: 'Libro eliminado exitosamente',
     }, 200);
   } catch (error) {
+    console.error('Error al eliminar libro:', error);
     return respuesta.error(
       req,
       res,
-      'No se pudo eliminar el libro. Es posible que tenga ejemplares o préstamos asociados.',
+      `No se pudo eliminar el libro: ${error.message}`,
       400
     );
   }

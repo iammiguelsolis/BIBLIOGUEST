@@ -84,8 +84,12 @@ exports.disableLaptop = async (req, res) => {
       200
     );
   } catch (error) {
-    console.error(error);
-    // Aquí podrías distinguir ORA-02292 si quieres mensaje más bonito
-    return respuesta.error(req, res, error.message, 500);
+    console.error('Error al deshabilitar laptop:', error);
+    return respuesta.error(
+      req,
+      res,
+      `No se pudo deshabilitar la laptop: ${error.message}`,
+      400
+    );
   }
 }

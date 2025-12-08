@@ -126,42 +126,42 @@ exports.getPrestamos = async (pagination = {}, data = {}) => {
   const binds = {};
 
   if (idUsuario) {
-    query += ` AND ID_USUARIO = :idUsuario`;
+    query += ` AND p.ID_USUARIO = :idUsuario`;
     binds.idUsuario = Number(idUsuario);
   }
 
   if (idBibliotecario) {
-    query += ` AND ID_BIBLIOTECARIO = :idBibliotecario`;
+    query += ` AND p.ID_BIBLIOTECARIO = :idBibliotecario`;
     binds.idBibliotecario = Number(idBibliotecario);
   }
 
   if (idEjemplar) {
-    query += ` AND ID_EJEMPLAR = :idEjemplar`;
+    query += ` AND p.ID_EJEMPLAR = :idEjemplar`;
     binds.idEjemplar = Number(idEjemplar);
   }
 
   if (estado) {
-    query += ` AND UPPER(ESTADO) = UPPER(:estado)`;
+    query += ` AND UPPER(p.ESTADO) = UPPER(:estado)`;
     binds.estado = estado;
   }
 
   if (fechaInicioDesde) {
-    query += ` AND TRUNC(FECHA_INICIO) >= TO_DATE(:fechaInicioDesde, 'YYYY-MM-DD')`;
+    query += ` AND TRUNC(p.FECHA_INICIO) >= TO_DATE(:fechaInicioDesde, 'YYYY-MM-DD')`;
     binds.fechaInicioDesde = fechaInicioDesde;
   }
 
   if (fechaInicioHasta) {
-    query += ` AND TRUNC(FECHA_INICIO) <= TO_DATE(:fechaInicioHasta, 'YYYY-MM-DD')`;
+    query += ` AND TRUNC(p.FECHA_INICIO) <= TO_DATE(:fechaInicioHasta, 'YYYY-MM-DD')`;
     binds.fechaInicioHasta = fechaInicioHasta;
   }
 
   if (fechaFinDesde) {
-    query += ` AND TRUNC(FECHA_FIN) >= TO_DATE(:fechaFinDesde, 'YYYY-MM-DD')`;
+    query += ` AND TRUNC(p.FECHA_FIN) >= TO_DATE(:fechaFinDesde, 'YYYY-MM-DD')`;
     binds.fechaFinDesde = fechaFinDesde;
   }
 
   if (fechaFinHasta) {
-    query += ` AND TRUNC(FECHA_FIN) <= TO_DATE(:fechaFinHasta, 'YYYY-MM-DD')`;
+    query += ` AND TRUNC(p.FECHA_FIN) <= TO_DATE(:fechaFinHasta, 'YYYY-MM-DD')`;
     binds.fechaFinHasta = fechaFinHasta;
   }
 
@@ -292,7 +292,7 @@ exports.createPrestamo = async (data) => {
     const result = await connection.execute(
       `
       BEGIN
-        PKG_PRESTAMOS.crear(
+        pr_crear_prestamo_libro(
           :p_usuario,
           :p_ejemplar,
           :p_fecha_inicio,
@@ -346,14 +346,14 @@ exports.devolverPrestamo = async (idPrestamo, fechaDevolucionStr) => {
       const fecha = parseFecha(fechaDevolucionStr);
       plsql = `
         BEGIN
-          PKG_PRESTAMOS.devolver(:p_prestamo, :p_fecha);
+          pr_devolver_prestamo_libro(:p_prestamo, :p_fecha);
         END;
       `;
       binds.p_fecha = { val: fecha, type: oracledb.DATE };
     } else {
       plsql = `
         BEGIN
-          PKG_PRESTAMOS.devolver(:p_prestamo);
+          pr_devolver_prestamo_libro(:p_prestamo);
         END;
       `;
     }
@@ -392,7 +392,7 @@ exports.asignarBibliotecario = async (idPrestamo, idBibliotecario) => {
     await connection.execute(
       `
       BEGIN
-        PKG_PRESTAMOS.entregar(
+        pr_asignar_bibliotecario_prestamo(
           :p_prestamo,
           :p_bibliotecario
         );
@@ -429,7 +429,7 @@ exports.cancelarPrestamo = async (idPrestamo) => {
     await connection.execute(
       `
       BEGIN
-        PKG_PRESTAMOS.cancelar(:p_prestamo);
+        pr_cancelar_prestamo_libro(:p_prestamo);
       END;
       `,
       {

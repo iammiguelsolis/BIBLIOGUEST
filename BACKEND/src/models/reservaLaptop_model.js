@@ -93,7 +93,7 @@ exports.getDisponibilidad = async (data) => {
     const result = await connection.execute(
       `
       BEGIN
-        PKG_RESERVAS.disponibilidad_laptop(
+        PRC_HORARIOS_DISP_LAPTOP(
           :p_fecha_reserva,
           :p_hora_inicio,
           :p_duracion_horas,
@@ -159,7 +159,7 @@ exports.crearReserva = async (data) => {
 
     const result = await connection.execute(
       `BEGIN
-        PKG_RESERVAS.reservar_laptop(
+        pr_reservar_laptop(
           :p_usuario,
           :p_laptop,
           :p_fecha,
@@ -211,7 +211,7 @@ exports.cancelarReserva = async (idReserva) => {
 
     await connection.execute(
       `BEGIN
-        PKG_RESERVAS.cancelar_laptop(:p_id_reserva);
+        pr_cancelar_reserva_laptop(:p_id_reserva);
       END;`,
       {
         p_id_reserva: { val: id, type: oracledb.NUMBER },
@@ -278,49 +278,56 @@ exports.getReserva = async (pagination = {}, data) => {
   const { page, limit } = pagination;
   const { fechaReserva, idUsuario, idLaptop, estado , idBibliotecario} = data;
 
-  let query = `
+    let query = `
     SELECT
-      ID_RESERVA,
-      ID_LAPTOP,
-      ID_USUARIO,
-      FECHA_RESERVA,
-      HORA_INICIO,
-      HORA_FIN,
-      ESTADO,
-      ID_BIBLIOTECARIO
-    FROM RESERVALAPTOP
+      r.ID_RESERVA,
+      r.ID_LAPTOP,
+      r.ID_USUARIO,
+      r.FECHA_RESERVA,
+      r.HORA_INICIO,
+      r.HORA_FIN,
+      r.ESTADO,
+      r.ID_BIBLIOTECARIO,
+      u.NOMBRE AS NOMBRE_USUARIO,
+      u.CODIGO_INSTITUCIONAL,
+      l.MARCA,
+      l.MODELO,
+      l.NUMERO_SERIE
+    FROM RESERVALAPTOP r
+    JOIN USUARIO u ON r.ID_USUARIO = u.ID_USUARIO
+    JOIN LAPTOP l ON r.ID_LAPTOP = l.ID_LAPTOP
     WHERE 1 = 1
   `;
 
   const binds = {};
 
   if (fechaReserva) {
-    query += ` AND TRUNC(FECHA_RESERVA) = TO_DATE(:fecha, 'YYYY-MM-DD')`;
+    query += ` AND TRUNC(r.FECHA_RESERVA) = TO_DATE(:fecha, 'YYYY-MM-DD')`;
     binds.fecha = fechaReserva;
   }
 
   if (idBibliotecario) {
-    query += ` AND ID_BIBLIOTECARIO = :idBibliotecario`;
+    query += ` AND r.ID_BIBLIOTECARIO = :idBibliotecario`;
     binds.idBibliotecario = Number(idBibliotecario);
   }
 
   if (idUsuario) {
-    query += ` AND ID_USUARIO = :idUsuario`;
+    query += ` AND r.ID_USUARIO = :idUsuario`;
     binds.idUsuario = Number(idUsuario);
   }
 
   if (idLaptop) {
-    query += ` AND ID_LAPTOP = :idLaptop`;
+    query += ` AND r.ID_LAPTOP = :idLaptop`;
     binds.idLaptop = Number(idLaptop);
   }
 
   if (estado) {
-    query += ` AND ESTADO = :estado`;
+    query += ` AND UPPER(r.ESTADO) = UPPER(:estado)`;
     binds.estado = estado;
   }
 
   query += `
-    ORDER BY FECHA_RESERVA DESC, HORA_INICIO
+    ORDER BY r.FECHA_RESERVA DESC, r.HORA_INICIO
     OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
   `;
 
@@ -357,6 +364,44 @@ exports.finalizarReserva = async (idReserva) => {
         AND UPPER(estado) = 'ACTIVA'
       `,
       { idReserva }
+    );
+
+    try {
+      await connection.commit();
+    } catch (e) {
+      await connection.rollback();
+    }
+
+    const rowsAffected = result.rowsAffected || 0;
+    return rowsAffected;
+  } catch (error) {
+    throw error;
+  } finally {
+    if (connection) {
+      await connection.close();
+    }
+  }
+}
+
+exports.confirmarReserva = async (idReserva, idBibliotecario) => {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    const id = parseInt(idReserva, 10);
+    const idBib = parseInt(idBibliotecario, 10);
+
+    if (!Number.isInteger(id) || !Number.isInteger(idBib)) {
+      throw new Error('ID reserva o bibliotecario inválido');
+    }
+
+    const result = await connection.execute(
+      `
+        UPDATE RESERVALAPTOP
+        SET ID_BIBLIOTECARIO = :idBibliotecario
+        WHERE ID_RESERVA = :idReserva
+        AND UPPER(estado) = 'ACTIVA'
+      `,
+      { idReserva: id, idBibliotecario: idBib }
     );
 
     try {
