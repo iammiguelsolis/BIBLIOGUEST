@@ -4,7 +4,7 @@ Sistema integral de gestión bibliotecaria desarrollado para la Universidad Naci
 
 > 🎥 **Video de Exposición**: El enlace al video de la presentación del proyecto se encuentra en el archivo [`EnlaceVideo.txt`](./1.ENTREGA_FINAL/EnlaceVideo.txt) en la raíz del repositorio.
 
-> 🎥 **Entrega Final - ConsultoraFisi**: El entregable final con todos nuestros scripts y los modelos necesarios para el diseño de nuestra base de datos. (./1.ENTREGA_FINAL/EnlaceVideo.txt)
+> 🎥 **Entrega Final - ConsultoraFisi**: El entregable final con todos nuestros scripts y los modelos necesarios para el diseño de nuestra base de datos. [`EntregaFinal - Consultora FISI`](<./1.ENTREGA_FINAL/EntregaFinal - Consultora FISI/>)
 
 ---
 
