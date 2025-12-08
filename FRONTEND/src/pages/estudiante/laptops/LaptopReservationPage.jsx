@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "../../../shared/hooks/useAuth";
 
 // =========================================================================
 // ⚙️ CONFIGURACIÓN DE API Y RUTAS
@@ -126,6 +127,7 @@ function LaptopReservationPage() {
     availability: "todas"
   });
 
+  const { usuario } = useAuth();
   const [allLaptops, setAllLaptops] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -156,33 +158,74 @@ function LaptopReservationPage() {
   // ---------------------------------------------------------
   // 1. GET (Cargar TODAS las laptops)
   // ---------------------------------------------------------
+  // ---------------------------------------------------------
+  // 1. GET (Cargar laptops usando endpoint adecuado)
+  // ---------------------------------------------------------
   useEffect(() => {
     const fetchLaptops = async () => {
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
-        if (filters.date) params.append('fecha', filters.date);
+        let url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LAPTOPS}`;
+        let isAvailabilitySearch = false;
+
+        // Si tenemos hora y duración, usamos el endpoint de disponibilidad
+        if (filters.date && filters.startTime && filters.duration) {
+             const horaInicioNum = convertTimeToInt(filters.startTime);
+             const duracionNum = parseInt(filters.duration.split(" ")[0]);
+
+             params.append('fecha', filters.date);
+             params.append('horaInicioNum', horaInicioNum);
+             params.append('duracionHoras', duracionNum);
+             
+             url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DISPONIBILIDAD}`;
+             isAvailabilitySearch = true;
+        } else {
+            // Búsqueda general por fecha (aunque el backend de /laptop ignorará fecha)
+            if (filters.date) params.append('fecha', filters.date);
+        }
+
+        // Filtros comunes
         if (filters.os) params.append('sistemaOperativo', filters.os);
         if (filters.brand) params.append('marca', filters.brand);
 
-        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.LAPTOPS}?${params.toString()}`;
-        const response = await fetch(url);
+        const fullUrl = `${url}?${params.toString()}`;
+        console.log("Fetching laptops:", fullUrl);
+
+        const response = await fetch(fullUrl);
         
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
-        const data = await response.json();
-        const rawData = data.body?.data || [];
+        const jsonResponse = await response.json();
+        
+        // Manejar diferencias en la estructura de respuesta
+        // /laptop -> { body: { data: [...] } } o { body: [...] }
+        // /reservaLaptop/disponibilidad -> { body: [...] } (según implementación común)
+        let rawData = [];
+        if (jsonResponse.body && Array.isArray(jsonResponse.body)) {
+            rawData = jsonResponse.body;
+        } else if (jsonResponse.body && jsonResponse.body.data) {
+            rawData = jsonResponse.body.data;
+        } else if (Array.isArray(jsonResponse)) {
+            rawData = jsonResponse; // Por si acaso devuelve array directo
+        }
 
-        const mappedLaptops = rawData.map(laptop => ({
-            id: laptop.ID_LAPTOP,
-            name: `${laptop.MARCA} ${laptop.MODELO}`,
-            os: laptop.SISTEMA_OPERATIVO,
-            brand: laptop.MARCA,
-            serialNumber: laptop.NUMERO_SERIE,
-            status: laptop.ESTADO, 
-            timeSlots: startTimeOptions,
-            durations: durationOptions
-        }));
+        const mappedLaptops = rawData.map(laptop => {
+            const brand = laptop.MARCA || laptop.marca || "";
+            const model = laptop.MODELO || laptop.modelo || "";
+            const name = `${brand} ${model}`.trim() || `Laptop ${laptop.ID_LAPTOP || laptop.idLaptop}`;
+
+            return {
+                id: laptop.ID_LAPTOP || laptop.idLaptop, 
+                name: name,
+                os: laptop.SISTEMA_OPERATIVO || laptop.sistemaOperativo,
+                brand: brand,
+                serialNumber: laptop.NUMERO_SERIE || model, 
+                status: isAvailabilitySearch ? 'disponible' : laptop.ESTADO, 
+                timeSlots: startTimeOptions,
+                durations: durationOptions
+            };
+        });
 
         setAllLaptops(mappedLaptops);
 
@@ -194,8 +237,9 @@ function LaptopReservationPage() {
       }
     };
 
+    // Agregar startTime y duration a dependencias para reactivar búsqueda
     fetchLaptops();
-  }, [filters.date, filters.os, filters.brand]);
+  }, [filters.date, filters.os, filters.brand, filters.startTime, filters.duration]);
 
   // ---------------------------------------------------------
   // 2. Filtrado Local
@@ -228,15 +272,17 @@ function LaptopReservationPage() {
     // Si no lo hizo, mostramos alerta, pero el botón en la tarjeta SÍ era clickeable.
     if (!filters.startTime || !filters.duration) {
         alert("⚠️ ATENCIÓN:\nPor favor selecciona una HORA DE INICIO y DURACIÓN en los filtros de arriba para confirmar tu reserva.");
-        // Opcional: Hacer scroll hacia arriba
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
-    const currentUserId = 1;
+    if (!usuario || !usuario.id) {
+        alert("Error: Usuario no identificado. Por favor inicie sesión nuevamente.");
+        return;
+    }
 
     const payload = {
-        idUsuario: currentUserId,
+        idUsuario: usuario.id,
         idLaptop: laptop.id,
         fecha: filters.date,
         horaInicio: convertTimeToString24(filters.startTime),

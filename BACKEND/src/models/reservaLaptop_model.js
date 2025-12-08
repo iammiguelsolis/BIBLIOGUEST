@@ -179,7 +179,7 @@ exports.crearReserva = async (data) => {
         p_fecha: { val: fecha, type: oracledb.DATE },
         p_hora_inicio: { val: horaInicioNorm, type: oracledb.STRING },
         p_hora_fin: { val: horaFinNorm, type: oracledb.STRING },
-        p_bibliotecario: { val: idBibliotecario, type: oracledb.NUMBER },
+        p_bibliotecario: { val: idBibliotecario || null, type: oracledb.NUMBER },
         p_id_reserva: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
       }
     );
