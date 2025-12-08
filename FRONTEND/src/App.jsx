@@ -24,6 +24,10 @@ import GestionLaptops from "./pages/bibliotecario/laptops/GestionLaptops";
 import GestionReservasLaptops from "./pages/bibliotecario/reservas/GestionReservasLaptops";
 import GestionCubiculos from "./pages/bibliotecario/cubiculos/GestionCubiculos";
 import GestionReservasCubiculos from "./pages/bibliotecario/reservas/GestionReservasCubiculos";
+import GestionUsuarios from "./pages/bibliotecario/usuarios/GestionUsuarios";
+import GestionBibliotecarios from "./pages/admin/bibliotecarios/GestionBibliotecarios";
+import GestionSanciones from "./pages/admin/sanciones/GestionSanciones";
+import Configuracion from "./pages/admin/configuracion/Configuracion";
 
 // Otras páginas
 import Donaciones from "./pages/donaciones/page/Donaciones";
@@ -66,16 +70,16 @@ function App() {
             <Route path="/gestion/cubiculos" element={<GestionCubiculos />} />
             <Route path="/gestion/reservas/cubiculos" element={<GestionReservasCubiculos />} />
             {/* Usuarios */}
-            <Route path="/gestion/usuarios" element={<div className="p-10 text-2xl">Buscar Usuarios (próximamente)</div>} />
+            <Route path="/gestion/usuarios" element={<GestionUsuarios />} />
           </Route>
         </Route>
 
         {/* Rutas de admin (solo admin) */}
         <Route element={<ProtectedRoute roles={['administrador']} />}>
           <Route element={<MainLayout />}>
-            <Route path="/admin/bibliotecarios" element={<div className="p-10 text-2xl">Gestión Bibliotecarios (próximamente)</div>} />
-            <Route path="/admin/sanciones" element={<div className="p-10 text-2xl">Gestión Sanciones (próximamente)</div>} />
-            <Route path="/admin/config" element={<div className="p-10 text-2xl">Configuración (próximamente)</div>} />
+            <Route path="/admin/bibliotecarios" element={<GestionBibliotecarios />} />
+            <Route path="/admin/sanciones" element={<GestionSanciones />} />
+            <Route path="/admin/config" element={<Configuracion />} />
           </Route>
         </Route>
 

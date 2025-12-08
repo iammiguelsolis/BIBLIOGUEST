@@ -5,7 +5,7 @@ import { Modal } from '../../../shared/components/molecules/Modal';
 import { useAuth } from '../../../shared/hooks/useAuth';
 
 export default function GestionReservasCubiculos() {
-  const { token, user } = useAuth();
+  const { token, usuario } = useAuth();
   
   // Estados
   const [reservas, setReservas] = useState([]);
@@ -79,10 +79,19 @@ export default function GestionReservasCubiculos() {
       });
       const data = await response.json();
 
-      if (!data.error) {
-        setIntegrantes(data.body || []);
+      if (!data.error && data.body) {
+        // El backend devuelve: { reserva, cubiculo, bibliotecario, miembros }
+        // miembros es un array con { idUsuario, nombre, codigoInstitucional, correo, estadoMiembro }
+        const miembrosData = data.body.miembros || [];
+        // Mapear a formato esperado por la tabla (uppercase keys)
+        const miembrosMapped = miembrosData.map(m => ({
+          NOMBRE_USUARIO: m.nombre,
+          CODIGO_INSTITUCIONAL: m.codigoInstitucional,
+          ESTADO_MIEMBRO: m.estadoMiembro
+        }));
+        setIntegrantes(miembrosMapped);
       } else {
-        setMensaje({ tipo: 'error', texto: 'Error al cargar integrantes' });
+        setMensaje({ tipo: 'error', texto: data.body || 'Error al cargar integrantes' });
         setModalIntegrantesOpen(false);
       }
     } catch (error) {
@@ -134,7 +143,7 @@ export default function GestionReservasCubiculos() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ idBibliotecario: user.idUsuario }) 
+        body: JSON.stringify({ idBibliotecario: usuario.id }) 
       });
       const data = await response.json();
 
