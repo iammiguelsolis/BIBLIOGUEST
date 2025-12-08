@@ -313,6 +313,7 @@ Configurar servidor Node.js con PM2 o similar.
 - **Ricardo Matamoros** - Backend Developer  
 - **Miguel Solis** - Frontend Developer
 - **Luis Arroyo** - Full Stack Developer
+- **Carol Montes** - Frontend Developer
 
 ---
 
