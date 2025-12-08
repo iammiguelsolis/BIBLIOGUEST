@@ -150,8 +150,8 @@ exports.crearReserva = async (data) => {
     const horaFin = data.horaFin;
     const idBibliotecario = parseInt(data.idBibliotecario, 10);
 
-    if (!idUsuario || !idLaptop || !horaInicio || !horaFin || !idBibliotecario) {
-      throw new Error('Parámetros requeridos: idUsuario, idLaptop, fecha, horaInicio, horaFin, idBibliotecario');
+    if (!idUsuario || !idLaptop || !horaInicio || !horaFin) {
+      throw new Error('Parámetros requeridos: idUsuario, idLaptop, fecha, horaInicio, horaFin');
     }
 
     const horaInicioNorm = normalizeHora(horaInicio);
@@ -175,7 +175,7 @@ exports.crearReserva = async (data) => {
         p_fecha: { val: fecha, type: oracledb.DATE },
         p_hora_inicio: { val: horaInicioNorm, type: oracledb.STRING },
         p_hora_fin: { val: horaFinNorm, type: oracledb.STRING },
-        p_bibliotecario: { val: idBibliotecario, type: oracledb.NUMBER },
+        p_bibliotecario: { val: idBibliotecario || null, type: oracledb.NUMBER },
         p_id_reserva: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
       }
     );
