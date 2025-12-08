@@ -238,23 +238,26 @@ export const mapLibroDetalleToFrontend = (detalleBackend) => {
 
   return {
     ...mapLibroToFrontend(libro),
-    autores: (detalleBackend.autores || []).map(a => ({
+    autores: (detalleBackend.autores || libro.autores || []).map(a => ({
       id: a.ID_AUTOR || a.idAutor,
       nombre: a.NOMBRE || a.nombre,
       apellido: a.APELLIDO || a.apellido,
       nacionalidad: a.NACIONALIDAD || a.nacionalidad,
       nombreCompleto: `${a.NOMBRE || a.nombre || ''} ${a.APELLIDO || a.apellido || ''}`.trim()
     })),
-    categorias: (detalleBackend.categorias || []).map(c => ({
+    categorias: (detalleBackend.categorias || libro.categorias || []).map(c => ({
       id: c.ID_CATEGORIA || c.idCategoria,
       nombre: c.NOMBRE || c.nombre,
       descripcion: c.DESCRIPCION || c.descripcion
     })),
-    etiquetas: (detalleBackend.etiquetas || []).map(e => ({
+    etiquetas: (detalleBackend.etiquetas || libro.etiquetas || []).map(e => ({
       id: e.ID_ETIQUETA || e.idEtiqueta,
       nombre: e.NOMBRE || e.nombre,
       descripcion: e.DESCRIPCION || e.descripcion
-    }))
+    })),
+    // Nuevos campos de disponibilidad desde la query con JOINs
+    ejemplaresDisponibles: detalleBackend.ejemplaresDisponibles || libro.ejemplaresDisponibles || 0,
+    totalEjemplares: detalleBackend.totalEjemplares || libro.totalEjemplares || 0
   };
 };
 

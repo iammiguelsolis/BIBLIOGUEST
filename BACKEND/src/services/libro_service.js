@@ -22,57 +22,47 @@ exports.getLibroById = async (idLibro) => {
 };
 
 exports.getLibroDetalleById = async (idLibro) => {
-  const rows = await model.getLibroDetalleById(idLibro);
-  if (!rows || rows.length === 0) return null;
+  const row = await model.getLibroDetalleById(idLibro);
+  if (!row) return null;
 
-  const base = rows[0];
+  // Función helper para parsear string de LISTAGG a array de objetos
+  const parseListagg = (str, parser) => {
+    if (!str) return [];
+    return str.split(', ').map(parser).filter(Boolean);
+  };
 
-  const autoresMap = new Map();
-  const categoriasMap = new Map();
-  const etiquetasMap = new Map();
+  // Parsear autores (formato: "Nombre Apellido, Nombre Apellido")
+  const autores = parseListagg(row.AUTORES, (nombreCompleto) => {
+    const parts = nombreCompleto.trim().split(' ');
+    if (parts.length < 2) return { nombre: nombreCompleto.trim(), apellido: '' };
+    const apellido = parts.pop();
+    const nombre = parts.join(' ');
+    return { nombre, apellido };
+  });
 
-  for (const row of rows) {
+  // Parsear categorías (formato: "Cat1, Cat2")
+  const categorias = parseListagg(row.CATEGORIAS, (nombre) => ({
+    nombre: nombre.trim()
+  }));
 
-    if (row.ID_AUTOR) {
-      if (!autoresMap.has(row.ID_AUTOR)) {
-        autoresMap.set(row.ID_AUTOR, {
-          idAutor: row.ID_AUTOR,
-          nombre: row.AUTOR_NOMBRE,
-          apellido: row.AUTOR_APELLIDO,
-        });
-      }
-    }
-
-    if (row.ID_CATEGORIA) {
-      if (!categoriasMap.has(row.ID_CATEGORIA)) {
-        categoriasMap.set(row.ID_CATEGORIA, {
-          idCategoria: row.ID_CATEGORIA,
-          nombre: row.CATEGORIA_NOMBRE,
-        });
-      }
-    }
-
-    if (row.ID_ETIQUETA) {
-      if (!etiquetasMap.has(row.ID_ETIQUETA)) {
-        etiquetasMap.set(row.ID_ETIQUETA, {
-          idEtiqueta: row.ID_ETIQUETA,
-          nombre: row.ETIQUETA_NOMBRE,
-        });
-      }
-    }
-  }
+  // Parsear etiquetas (formato: "Tag1, Tag2")
+  const etiquetas = parseListagg(row.ETIQUETAS, (nombre) => ({
+    nombre: nombre.trim()
+  }));
 
   return {
-    idLibro: base.ID_LIBRO,
-    isbn: base.ISBN,
-    titulo: base.TITULO,
-    subtitulo: base.SUBTITULO,
-    editorial: base.EDITORIAL,
-    nroEdicion: base.NRO_EDICION,
-    anio: base.ANIO,
-    autores: Array.from(autoresMap.values()),
-    categorias: Array.from(categoriasMap.values()),
-    etiquetas: Array.from(etiquetasMap.values()),
+    idLibro: row.ID_LIBRO,
+    isbn: row.ISBN,
+    titulo: row.TITULO,
+    subtitulo: row.SUBTITULO,
+    editorial: row.EDITORIAL,
+    nroEdicion: row.NRO_EDICION,
+    anio: row.ANIO,
+    autores,
+    categorias,
+    etiquetas,
+    ejemplaresDisponibles: row.EJEMPLARES_DISPONIBLES || 0,
+    totalEjemplares: row.TOTAL_EJEMPLARES || 0
   };
 };
 
