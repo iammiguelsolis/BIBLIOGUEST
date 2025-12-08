@@ -35,7 +35,7 @@ const EstadoBadge = ({ estado }) => {
 // Modal reutilizable
 const Modal = ({ show, onClose, title, children, size = 'md' }) => {
   if (!show) return null;
-  
+
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-2xl',
@@ -68,17 +68,17 @@ export default function GestionPrestamos() {
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  
+
   // Estados de modales
   const [modalNuevoOpen, setModalNuevoOpen] = useState(false);
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
   const [prestamoSeleccionado, setPrestamoSeleccionado] = useState(null);
-  
+
   // Estado para modal de confirmación
   const [modalConfirmOpen, setModalConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState('');
-  
+
   // Estado para mensajes de error/éxito
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
 
@@ -120,17 +120,17 @@ export default function GestionPrestamos() {
       setError(null);
       const params = new URLSearchParams();
       if (filtroEstado) params.append('estado', filtroEstado);
-      
+
       const response = await fetch(`${API_URL}/prestamoLibro?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      
+
       console.log('📋 Respuesta API préstamos:', { status: response.status, data });
-      
+
       if (!data.error && data.body) {
-        const prestamosRaw = Array.isArray(data.body.data) ? data.body.data : 
-                            Array.isArray(data.body) ? data.body : [];
+        const prestamosRaw = Array.isArray(data.body.data) ? data.body.data :
+          Array.isArray(data.body) ? data.body : [];
         const prestamosData = prestamosRaw.map(normalizarPrestamo);
         console.log('📋 Préstamos normalizados:', prestamosData);
         setPrestamos(prestamosData);
@@ -168,7 +168,7 @@ export default function GestionPrestamos() {
         setModalDetalleOpen(true);
       }
     } catch (err) {
-      alert('Error al cargar detalle');
+      setMensaje({ tipo: 'error', texto: 'Error al cargar detalle del préstamo' });
     }
   };
 
@@ -217,7 +217,7 @@ export default function GestionPrestamos() {
     try {
       const response = await fetch(`${API_URL}/prestamoLibro/${idPrestamo}/entregar`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -241,7 +241,7 @@ export default function GestionPrestamos() {
     try {
       const response = await fetch(`${API_URL}/prestamoLibro/${idPrestamo}/devolver`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -265,7 +265,7 @@ export default function GestionPrestamos() {
     try {
       const response = await fetch(`${API_URL}/prestamoLibro/${idPrestamo}/cancelar`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -325,7 +325,7 @@ export default function GestionPrestamos() {
           <option value="finalizado_tardio">Devuelto con Atraso</option>
           <option value="cancelado">Cancelado</option>
         </select>
-        
+
         {/* Botón nuevo préstamo */}
         <button
           onClick={() => setModalNuevoOpen(true)}
@@ -409,7 +409,7 @@ export default function GestionPrestamos() {
             <input
               type="number"
               value={formData.idUsuario}
-              onChange={(e) => setFormData({...formData, idUsuario: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, idUsuario: e.target.value })}
               className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
               placeholder="Ingrese el ID del estudiante"
               required
@@ -420,7 +420,7 @@ export default function GestionPrestamos() {
             <input
               type="number"
               value={formData.idEjemplar}
-              onChange={(e) => setFormData({...formData, idEjemplar: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, idEjemplar: e.target.value })}
               className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
               placeholder="Ingrese el ID del ejemplar"
               required
@@ -432,7 +432,7 @@ export default function GestionPrestamos() {
               <input
                 type="date"
                 value={formData.fechaInicio}
-                onChange={(e) => setFormData({...formData, fechaInicio: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
                 className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
                 required
               />
@@ -442,7 +442,7 @@ export default function GestionPrestamos() {
               <input
                 type="date"
                 value={formData.fechaFin}
-                onChange={(e) => setFormData({...formData, fechaFin: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })}
                 className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
                 required
               />
@@ -535,7 +535,7 @@ export default function GestionPrestamos() {
                   </button>
                 </>
               )}
-              
+
               {(prestamoSeleccionado.estado === 'activo' || prestamoSeleccionado.estado === 'atrasado') && (
                 <>
                   {/* Si no tiene bibliotecario, se puede cancelar o entregar */}
@@ -581,7 +581,7 @@ export default function GestionPrestamos() {
 
               {['finalizado', 'finalizado_tardio', 'cancelado'].includes(prestamoSeleccionado.estado) && (
                 <p className="text-gray-500 italic">
-                  {prestamoSeleccionado.estado === 'finalizado_tardio' 
+                  {prestamoSeleccionado.estado === 'finalizado_tardio'
                     ? 'Este préstamo fue devuelto con atraso.'
                     : `Este préstamo ya fue ${prestamoSeleccionado.estado}.`
                   }
@@ -621,12 +621,11 @@ export default function GestionPrestamos() {
 
       {/* Banda de mensajes */}
       {mensaje.texto && (
-        <div className={`fixed bottom-4 right-4 p-4 rounded-xl shadow-lg flex items-center gap-3 z-50 ${
-          mensaje.tipo === 'exito' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`fixed bottom-4 right-4 p-4 rounded-xl shadow-lg flex items-center gap-3 z-50 ${mensaje.tipo === 'exito' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           {mensaje.tipo === 'exito' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           <span>{mensaje.texto}</span>
-          <button 
+          <button
             onClick={() => setMensaje({ tipo: '', texto: '' })}
             className="ml-2 hover:opacity-70"
           >

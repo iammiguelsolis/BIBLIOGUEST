@@ -86,7 +86,7 @@ export default function DashboardEstudiante() {
   const user = data?.usuario || usuario || {};
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6 min-h-screen bg-gray-50/50">
+    <div className="p-8 mx-auto space-y-6 min-h-screen bg-gray-50/50">
       
       {/* Header con datos personales */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
