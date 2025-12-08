@@ -148,7 +148,11 @@ exports.crearReserva = async (data) => {
     const fecha = parseFecha(data.fecha);
     const horaInicio = data.horaInicio;
     const horaFin = data.horaFin;
-    const idBibliotecario = parseInt(data.idBibliotecario, 10);
+    const idBibliotecario = data.idBibliotecario ? parseInt(data.idBibliotecario, 10) : null;
+
+    if (isNaN(idUsuario) || isNaN(idLaptop) || (idBibliotecario !== null && isNaN(idBibliotecario))) {
+      throw new Error('Parámetros requeridos: idUsuario, idLaptop, idBibliotecario deben ser números válidos');
+    }
 
     if (!idUsuario || !idLaptop || !horaInicio || !horaFin) {
       throw new Error('Parámetros requeridos: idUsuario, idLaptop, fecha, horaInicio, horaFin');

@@ -15,6 +15,7 @@ import LibrosPage from "./pages/public/Catalogo/page/Libros";
 // Páginas de estudiante
 import LaptopReservationPage from "./pages/estudiante/laptops/LaptopReservationPage";
 import Cubiculos from "./pages/estudiante/cubiculos/page/Cubiculos";
+import MisPrestamosPage from "./pages/estudiante/prestamos/MisPrestamosPage";
 
 // Páginas de bibliotecario/admin
 import GestionLibros from "./pages/bibliotecario/libros/GestionLibros";
@@ -52,6 +53,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/laptops" element={<LaptopReservationPage />} />
             <Route path="/cubiculos" element={<Cubiculos />} />
+            <Route path="/prestamos" element={<MisPrestamosPage />} />
           </Route>
         </Route>
 

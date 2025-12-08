@@ -118,10 +118,50 @@ exports.getLibroById = async (idLibro) => {
 
 
 exports.getLibroDetalleById = async (idLibro) => {
-  // Usa la vista VW_LIBRO_COMPLETO que ya tiene autores, categorías y etiquetas agregados
+  // Query directa con JOINs en lugar de usar la vista VW_LIBRO_COMPLETO
   const query = `
-    SELECT * FROM VW_LIBRO_COMPLETO
-    WHERE ID_LIBRO = :idLibro
+    SELECT 
+      l.ID_LIBRO,
+      l.ISBN,
+      l.TITULO,
+      l.SUBTITULO,
+      l.EDITORIAL,
+      l.NRO_EDICION,
+      l.ANIO,
+      (
+        SELECT LISTAGG(a.NOMBRE || ' ' || a.APELLIDO, ', ') 
+               WITHIN GROUP (ORDER BY a.APELLIDO)
+        FROM LIBROAUTOR la
+        JOIN AUTOR a ON a.ID_AUTOR = la.ID_AUTOR
+        WHERE la.ID_LIBRO = l.ID_LIBRO
+      ) AS AUTORES,
+      (
+        SELECT LISTAGG(c.NOMBRE, ', ') 
+               WITHIN GROUP (ORDER BY c.NOMBRE)
+        FROM CATEGORIASLIBRO cl
+        JOIN CATEGORIAS c ON c.ID_CATEGORIA = cl.ID_CATEGORIA
+        WHERE cl.ID_LIBRO = l.ID_LIBRO
+      ) AS CATEGORIAS,
+      (
+        SELECT LISTAGG(e.NOMBRE, ', ') 
+               WITHIN GROUP (ORDER BY e.NOMBRE)
+        FROM LIBROETIQUETAS le
+        JOIN ETIQUETAS e ON e.ID_ETIQUETA = le.ID_ETIQUETA
+        WHERE le.ID_LIBRO = l.ID_LIBRO
+      ) AS ETIQUETAS,
+      (
+        SELECT COUNT(*) 
+        FROM EJEMPLAR ej 
+        WHERE ej.ID_LIBRO = l.ID_LIBRO 
+          AND ej.ESTADO = 'disponible'
+      ) AS EJEMPLARES_DISPONIBLES,
+      (
+        SELECT COUNT(*) 
+        FROM EJEMPLAR ej 
+        WHERE ej.ID_LIBRO = l.ID_LIBRO
+      ) AS TOTAL_EJEMPLARES
+    FROM LIBRO l
+    WHERE l.ID_LIBRO = :idLibro
   `;
 
   const result = await db.query(query, { idLibro: Number(idLibro) });
@@ -178,12 +218,12 @@ exports.createLibro = async (data) => {
     return idLibro;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -246,12 +286,12 @@ exports.updateLibro = async (idLibro, data) => {
     return result.rowsAffected || 0;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -282,12 +322,12 @@ exports.deleteLibro = async (idLibro) => {
     return result.rowsAffected || 0;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -323,12 +363,12 @@ exports.setAutoresLibro = async (idLibro, idsAutores = []) => {
     return true;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -354,12 +394,12 @@ exports.removeAutorLibro = async (idLibro, idAutor) => {
     return result.rowsAffected || 0;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -395,12 +435,12 @@ exports.setCategoriasLibro = async (idLibro, idsCategorias = []) => {
     return true;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -426,12 +466,12 @@ exports.removeCategoriaLibro = async (idLibro, idCategoria) => {
     return result.rowsAffected || 0;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -467,12 +507,12 @@ exports.setEtiquetasLibro = async (idLibro, idsEtiquetas = []) => {
     return true;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
@@ -498,12 +538,12 @@ exports.removeEtiquetaLibro = async (idLibro, idEtiqueta) => {
     return result.rowsAffected || 0;
   } catch (error) {
     if (connection) {
-      try { await connection.rollback(); } catch {}
+      try { await connection.rollback(); } catch { }
     }
     throw error;
   } finally {
     if (connection) {
-      try { await connection.close(); } catch {}
+      try { await connection.close(); } catch { }
     }
   }
 };
