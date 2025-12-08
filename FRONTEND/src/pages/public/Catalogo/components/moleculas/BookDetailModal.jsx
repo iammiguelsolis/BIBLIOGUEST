@@ -17,7 +17,6 @@ export const BookDetailModal = ({
   token = null
 }) => {
   const [bookDetail, setBookDetail] = useState(null);
-  const [ejemplares, setEjemplares] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -42,20 +41,10 @@ export const BookDetailModal = ({
     setError(null);
 
     try {
-      // Cargar detalle del libro
+      // Cargar detalle del libro (ahora incluye ejemplaresDisponibles)
       const detalleResponse = await getLibroDetalle(bookId);
       const libro = mapLibroDetalleToFrontend(detalleResponse.body || detalleResponse);
       setBookDetail(libro);
-
-      // Cargar ejemplares disponibles
-      try {
-        const ejemplaresResponse = await getEjemplaresLibro(bookId);
-        const ejemplaresData = ejemplaresResponse.body?.data || ejemplaresResponse.body || [];
-        setEjemplares(Array.isArray(ejemplaresData) ? ejemplaresData : []);
-      } catch (err) {
-        console.log('No se pudieron cargar ejemplares:', err);
-        setEjemplares([]);
-      }
     } catch (err) {
       console.error('Error cargando detalle:', err);
       setError('No se pudo cargar la información del libro');
@@ -70,7 +59,7 @@ export const BookDetailModal = ({
       return;
     }
 
-    if (ejemplares.length === 0) {
+    if (!bookDetail || bookDetail.ejemplaresDisponibles === 0) {
       setLoanMessage({ type: 'error', text: 'No hay ejemplares disponibles para préstamo' });
       return;
     }
@@ -79,10 +68,27 @@ export const BookDetailModal = ({
     setLoanMessage({ type: '', text: '' });
 
     try {
+      // Obtener ejemplares reales del backend para tener el ID
+      const ejemplaresResponse = await getEjemplaresLibro(bookId);
+      const ejemplaresData = ejemplaresResponse.body?.data || ejemplaresResponse.body || [];
+      const ejemplaresDisponibles = Array.isArray(ejemplaresData) ? ejemplaresData : [];
+
+      if (ejemplaresDisponibles.length === 0) {
+        throw new Error('No hay ejemplares disponibles en este momento');
+      }
+
       // Usar el primer ejemplar disponible
-      const ejemplar = ejemplares[0];
+      const ejemplar = ejemplaresDisponibles[0];
       const idEjemplar = ejemplar.ID_EJEMPLAR || ejemplar.idEjemplar;
       const idUsuario = usuario?.idUsuario || usuario?.id;
+
+      if (!idUsuario) {
+        throw new Error('Debes iniciar sesión para solicitar un préstamo');
+      }
+
+      if (!idEjemplar) {
+        throw new Error('No se pudo obtener el ID del ejemplar');
+      }
 
       await solicitarPrestamo({
         idUsuario,
@@ -94,7 +100,7 @@ export const BookDetailModal = ({
       setLoanMessage({ type: 'success', text: '¡Préstamo solicitado exitosamente! Acércate a la biblioteca para recoger el libro.' });
       setShowLoanForm(false);
 
-      // Recargar ejemplares
+      // Recargar detalles
       loadBookDetail();
     } catch (err) {
       setLoanMessage({ type: 'error', text: err.message || 'Error al solicitar el préstamo' });
@@ -263,13 +269,18 @@ export const BookDetailModal = ({
                   <div>
                     <p className="font-semibold text-[#2D2D2D]">Disponibilidad</p>
                     <p className="text-sm text-gray-600">
-                      {ejemplares.length > 0
-                        ? `${ejemplares.length} ejemplar${ejemplares.length > 1 ? 'es' : ''} disponible${ejemplares.length > 1 ? 's' : ''}`
+                      {bookDetail.ejemplaresDisponibles > 0
+                        ? `${bookDetail.ejemplaresDisponibles} ejemplar${bookDetail.ejemplaresDisponibles > 1 ? 'es' : ''} disponible${bookDetail.ejemplaresDisponibles > 1 ? 's' : ''}`
                         : 'No hay ejemplares disponibles actualmente'
                       }
+                      {bookDetail.totalEjemplares > 0 && (
+                        <span className="text-gray-400 ml-1">
+                          (Total: {bookDetail.totalEjemplares})
+                        </span>
+                      )}
                     </p>
                   </div>
-                  <div className={`w-4 h-4 rounded-full ${ejemplares.length > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <div className={`w-4 h-4 rounded-full ${bookDetail.ejemplaresDisponibles > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 </div>
               </div>
 
@@ -281,7 +292,7 @@ export const BookDetailModal = ({
               )}
 
               {/* Formulario de préstamo */}
-              {showLoanForm && isAuthenticated && ejemplares.length > 0 && (
+              {showLoanForm && isAuthenticated && bookDetail?.ejemplaresDisponibles > 0 && (
                 <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                   <h4 className="font-semibold text-[#2D2D2D]">Solicitar Préstamo</h4>
 
@@ -337,7 +348,7 @@ export const BookDetailModal = ({
 
         {/* Footer */}
         <footer className="p-4 border-t border-gray-200 flex gap-3 justify-end bg-gray-50">
-          {isAuthenticated && ejemplares.length > 0 && !showLoanForm && !loanMessage.text && (
+          {isAuthenticated && bookDetail?.ejemplaresDisponibles > 0 && !showLoanForm && !loanMessage.text && (
             <Button variant="secondary" onClick={() => setShowLoanForm(true)}>
               Solicitar Préstamo
             </Button>
