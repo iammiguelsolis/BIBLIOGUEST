@@ -309,7 +309,7 @@ exports.crearBorradorReservaCubiculo = async (data) => {
     const resultReserva = await connection.execute(
       `
       BEGIN
-        PKG_RESERVAS.reservar_cubiculo(
+        pr_reservar_cubiculo(
           :p_grupo,
           :p_cubiculo,
           :p_fecha,
@@ -377,7 +377,7 @@ exports.confirmarReserva = async (idReserva) => {
     await connection.execute(
       `
       BEGIN
-        PKG_RESERVAS.confirmar_cubiculo(:p_reserva);
+        pr_confirmar_reserva_cubiculo(:p_reserva);
       END;
       `,
       {
@@ -415,7 +415,7 @@ exports.registrarIngreso = async (idReserva, idBibliotecario) => {
     await connection.execute(
       `
       BEGIN
-        PKG_RESERVAS.registrar_ingreso_cubiculo(
+        pr_registrar_ingreso_reserva_cubiculo(
           :p_reserva,
           :p_bibliotecario
         );
@@ -451,7 +451,7 @@ exports.finalizarReserva = async (idReserva) => {
     await connection.execute(
       `
       BEGIN
-        PKG_RESERVAS.finalizar_cubiculo(:p_reserva);
+        pr_finalizar_reserva_cubiculo(:p_reserva);
       END;
       `,
       {
@@ -483,7 +483,7 @@ exports.cancelarReserva = async (idReserva) => {
     await connection.execute(
       `
       BEGIN
-        PKG_RESERVAS.cancelar_cubiculo(:p_reserva);
+        pr_cancelar_reserva_cubiculo(:p_reserva);
       END;
       `,
       {
