@@ -2,9 +2,9 @@
 
 Sistema integral de gestión bibliotecaria desarrollado para la Universidad Nacional Mayor de San Marcos (UNMSM). BiblioGest permite la administración eficiente de préstamos de libros, reservas de laptops y cubículos, gestión de usuarios y sanciones.
 
-> 🎥 **Video de Exposición**: El enlace al video de la presentación del proyecto se encuentra en el archivo [`EnlaceVideo.txt`](./EnlaceVideo.txt) en la raíz del repositorio.
+> 🎥 **Video de Exposición**: El enlace al video de la presentación del proyecto se encuentra en el archivo [`EnlaceVideo.txt`](./1.ENTREGA_FINAL/EnlaceVideo.txt) en la raíz del repositorio.
 
-> 🎥 **Entrega Final - ConsultoraFisi**: El entregable final con todos nuestros scripts y los modelos necesarios para el diseño de nuestra base de datos.
+> 🎥 **Entrega Final - ConsultoraFisi**: El entregable final con todos nuestros scripts y los modelos necesarios para el diseño de nuestra base de datos. (./1.ENTREGA_FINAL/EnlaceVideo.txt)
 
 ---
 
